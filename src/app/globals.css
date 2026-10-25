@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+body {
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+input, select, textarea {
+  font: inherit;
+}
