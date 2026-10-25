@@ -1,5 +1,6 @@
 "use client";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
+import { isSellerRole, SELLER_ONLY_PATHS } from "./NavLinks";
 import { useEffect, useState } from "react";
 
 export const ROLES = [
@@ -33,6 +34,7 @@ export function useRole() {
 /** No login for the MVP: pick a role (and optionally a name for the timeline). */
 export function RoleSwitcher() {
   const router = useRouter();
+  const path = usePathname();
   const [role, setRole] = useState("seller");
   const [name, setName] = useState("");
   useEffect(() => {
@@ -50,6 +52,9 @@ export function RoleSwitcher() {
           setRole(e.target.value);
           setCookie("c2s_role", e.target.value);
           window.dispatchEvent(new Event("c2s-role"));
+          // Leaving a seller-only page (New booking, Outbox) when switching to another role: go to their dashboard.
+          // (The menu lives in the layout, which only re-renders on refresh.)
+          if (!isSellerRole(e.target.value) && SELLER_ONLY_PATHS.some((p) => path.startsWith(p))) router.push("/");
           router.refresh();
         }}
         className="rounded-md border-0 bg-slate-800 px-2 py-1 text-white ring-1 ring-slate-600 focus:ring-2 focus:ring-sky-400"

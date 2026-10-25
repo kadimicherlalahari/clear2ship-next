@@ -70,7 +70,7 @@ export function ShipmentView({ id }: { id: string }) {
       {/* 1. Header and what happens next */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Link href="/" className="text-sm text-sky-700 hover:underline">← All shipments</Link>
+          <Link href="/" className="text-sm text-sky-700 hover:underline">{isSeller ? "← All shipments" : "← Back to dashboard"}</Link>
           <h1 className="mt-1 flex flex-wrap items-center gap-3 text-2xl font-semibold">{s.id} <StatusBadge status={s.status} /></h1>
           <p className="text-sm text-slate-600">
             {s.seller_name ?? "No seller yet"} · {s.origin_city ?? "?"}, UK → {s.destination_city ?? "?"}{s.destination_country ? `, ${s.destination_country}` : ""} · last update {timeAgo(s.updated_at)}

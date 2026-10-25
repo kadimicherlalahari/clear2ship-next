@@ -1,4 +1,6 @@
+import { cookies } from "next/headers";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { q } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -8,6 +10,8 @@ const KIND: Record<string, string> = {
 };
 
 export default async function Outbox() {
+  const role = (await cookies()).get("c2s_role")?.value ?? "seller";
+  if (role !== "seller" && role !== "admin") redirect("/");
   const emails = await q("SELECT * FROM emails ORDER BY sent_at DESC LIMIT 200");
   const connected = !!process.env.RESEND_API_KEY;
   return (

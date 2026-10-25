@@ -5,7 +5,7 @@ import { BookingForm, toFormValues } from "@/components/BookingForm";
 import { Chat } from "@/components/Chat";
 import { ExcelUpload } from "@/components/ExcelUpload";
 import { useRole } from "@/components/RoleSwitcher";
-import { InfoNote, postJson } from "@/components/ui";
+import { postJson } from "@/components/ui";
 
 const TABS = [
   { id: "chat", label: "Chat" },
@@ -18,6 +18,11 @@ export default function NewBooking() {
   const [tab, setTab] = useState<Tab>("chat");
   const router = useRouter();
   const role = useRole();
+
+  // New bookings are for sellers: other roles go to their dashboard.
+  useEffect(() => {
+    if (role !== "seller" && role !== "admin") { router.replace("/"); router.refresh(); }
+  }, [role, router]);
 
   // Open a tab from the link, e.g. /new?tab=excel
   useEffect(() => {
@@ -35,7 +40,6 @@ export default function NewBooking() {
         <h1 className="text-2xl font-semibold">New booking</h1>
         <p className="text-sm text-slate-600">Describe the shipment in chat, fill in the form, or upload several bookings from Excel.</p>
       </div>
-      {role !== "seller" && role !== "admin" && <InfoNote>Bookings are made by the seller. Switch role to Seller at the top to continue.</InfoNote>}
       <div role="tablist" aria-label="How to add the booking" className="inline-flex rounded-lg bg-slate-200 p-1 text-sm">
         {TABS.map((t) => (
           <button key={t.id} role="tab" aria-selected={tab === t.id} onClick={() => choose(t.id)}
