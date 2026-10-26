@@ -1,4 +1,5 @@
 "use client";
+import { Pencil } from "lucide-react";
 import { useState } from "react";
 import { DETAIL_FIELDS, ITEM_DETAIL_FIELDS, missingDetails, validateDetail, type DetailValue, type DocDetails } from "@/lib/docDetails";
 import { DOC_LABEL, REQUIRED_DOCS } from "@/lib/rules/docs";
@@ -43,7 +44,7 @@ function DocBox({ shipmentId, kind, doc, canEdit, busy, act }: { shipmentId: str
       {doc && (
         <p className="mb-2 text-xs text-slate-500">
           {doc.size_bytes > 0
-            ? <a className="text-sky-700 hover:underline" href={`/api/shipments/${shipmentId}/documents/${doc.id}/file`} target="_blank" rel="noreferrer">{doc.filename}</a>
+            ? <a className="font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline focus-visible:underline" href={`/api/shipments/${shipmentId}/documents/${doc.id}/file`} target="_blank" rel="noreferrer">{doc.filename}</a>
             : doc.filename}{" "}· uploaded {formatTime(doc.uploaded_at)}
         </p>
       )}
@@ -51,7 +52,7 @@ function DocBox({ shipmentId, kind, doc, canEdit, busy, act }: { shipmentId: str
         const x = f as unknown as { value: string; original_value: unknown; original_source: string | null; corrected_by: string; corrected_at: string };
         return (
           <p key={k} className="mb-2 rounded-md bg-amber-50 px-2 py-1 text-xs text-amber-900">
-            ✎ {k.replaceAll("_", " ")}: read as <b>{String(x.original_value)}</b>{x.original_source && x.original_source !== String(x.original_value) ? ` (“${x.original_source}”)` : ""}, corrected to <b>{x.value}</b> by {x.corrected_by} · {formatTime(x.corrected_at)}
+            <Pencil className="mr-1 inline h-3 w-3" aria-hidden />{k.replaceAll("_", " ")}: read as <b>{String(x.original_value)}</b>{x.original_source && x.original_source !== String(x.original_value) ? ` (“${x.original_source}”)` : ""}, corrected to <b>{x.value}</b> by {x.corrected_by} · {formatTime(x.corrected_at)}
           </p>
         );
       })}

@@ -1,4 +1,6 @@
 "use client";
+import { ArrowLeft } from "lucide-react";
+import { ClearedStamp, MomentToast, useMilestone } from "./Moments";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import type { CarrierResult, Issue } from "@/lib/rules/types";
@@ -44,11 +46,17 @@ export function ShipmentView({ id }: { id: string }) {
   const [declRef, setDeclRef] = useState("");
   const [declDate, setDeclDate] = useState("");
   const [flash, setFlash] = useState<string | null>(null);
+  const { moment, clear: clearMoment } = useMilestone(b?.shipment.status, !!b?.shipment.submitted_at);
 
   const load = useCallback(async () => {
     try { setB(await api<Bundle>(`/api/shipments/${id}`)); setLoadErr(null); } catch (e) { setLoadErr((e as Error).message); }
   }, [id]);
   useEffect(() => { load(); }, [load]);
+  // Links like /shipments/BK-003#customs-reply: the panels only exist once the data is in, so jump to them then.
+  const loaded = b !== null;
+  useEffect(() => {
+    if (loaded && location.hash) document.getElementById(decodeURIComponent(location.hash.slice(1)))?.scrollIntoView({ block: "start" });
+  }, [loaded]);
 
   /** Run an action, then reload everything (status, checks, timeline). Errors are shown where the action is. */
   const act = async (fn: () => Promise<unknown>, done?: string) => {
@@ -70,23 +78,22 @@ export function ShipmentView({ id }: { id: string }) {
       {/* 1. Header and what happens next */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Link href="/" className="text-sm text-sky-700 hover:underline">{isSeller ? "← All shipments" : "← Back to dashboard"}</Link>
-          <h1 className="mt-1 flex flex-wrap items-center gap-3 text-2xl font-semibold">{s.id} <StatusBadge status={s.status} /></h1>
+          <Link href="/" className="text-sm font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline focus-visible:underline"><ArrowLeft className="mr-1 inline h-4 w-4" aria-hidden />{isSeller ? "All shipments" : "Back to dashboard"}</Link>
+          <h1 className="mt-2 flex flex-wrap items-center gap-3 text-4xl sm:text-5xl">{s.id} <StatusBadge status={s.status} /></h1>
           <p className="text-sm text-slate-600">
             {s.seller_name ?? "No seller yet"} · {s.origin_city ?? "?"}, UK → {s.destination_city ?? "?"}{s.destination_country ? `, ${s.destination_country}` : ""} · last update {timeAgo(s.updated_at)}
           </p>
           <Pipeline shipment={s} />
         </div>
         {s.pending_action && (
-          <div className="max-w-md rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Next step</p>
-            <p className="font-medium">{s.pending_action}</p>
-            {s.responsible_role && <p className="text-slate-600">Responsible: {ROLE_LABEL[s.responsible_role] ?? s.responsible_role}</p>}
+          <div className="w-full max-w-sm rounded-2xl bg-slate-900 p-4 text-sm text-white shadow-md sm:w-auto">
+            <p className="text-base font-semibold leading-snug"><span className="text-sky-400">Next step:</span> {s.pending_action}</p>
+            {s.responsible_role && <p className="mt-1 text-slate-300">Who: {ROLE_LABEL[s.responsible_role] ?? s.responsible_role}</p>}
           </div>
         )}
       </div>
 
-      <div className="sticky top-0 z-20 space-y-2">
+      <div className="sticky top-20 z-30 space-y-2">
         {flash && <p className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800 shadow-sm">{flash}</p>}
         {err && <p role="alert" className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-800 shadow-sm">{err}</p>}
       </div>
@@ -94,10 +101,18 @@ export function ShipmentView({ id }: { id: string }) {
       {s.customs_status && (exception
         ? <CustomsExceptionPanel shipment={s} replies={b.replies} canReply={isSeller} act={act} busy={busy} />
         : (
-          <Card title={`Customs status: ${s.customs_status}`} className="border-green-300">
-            <p className="text-xs text-slate-500">Confirmed by a person. Clear2Ship never sets a customs status on its own.</p>
+          <Card className="border-green-300">
+            <div className="flex items-center gap-5">
+              <ClearedStamp />
+              <div>
+                <h2 className="text-lg font-bold tracking-tight">{s.status === "Delivered" ? "Cleared and delivered" : "Cleared by customs"}</h2>
+                <p className="text-sm text-slate-600">Confirmed by a person. Clear2Ship never sets a customs status on its own.</p>
+              </div>
+            </div>
           </Card>
         ))}
+
+      {moment && <MomentToast kind={moment} onDone={clearMoment} />}
 
       {/* 2. Checks, each with its fix right below it */}
       <ChecksPanel check={b.check} shipment={s} items={b.items} canFix={isSeller && !locked} act={act} busy={busy} showDisclaimer={!booked} />
@@ -193,7 +208,7 @@ export function ShipmentView({ id }: { id: string }) {
       <Timeline events={b.events as never} />
 
       {isSeller && (
-        <Card title="Alerts sent to the seller" actions={<Link href="/alerts" className="text-sm text-sky-700 hover:underline">All alerts</Link>}>
+        <Card title="Alerts sent to the seller" actions={<Link href="/alerts" className="text-sm font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline focus-visible:underline">All alerts</Link>}>
           {!b.alerts.length && <p className="text-sm text-slate-500">No alerts yet.</p>}
           <ul className="space-y-2">
             {b.alerts.map((a) => (
@@ -201,7 +216,7 @@ export function ShipmentView({ id }: { id: string }) {
                 <p><b>{a.title}</b> <span className="text-xs text-slate-500">· {formatTime(a.created_at)}</span></p>
                 <p className="text-xs text-slate-500">
                   App: shown · Email: {a.channels?.email?.status === "sent" ? "sent" : a.channels?.email?.status === "outbox" ? "in email log" : "not sent"} · Telegram: {a.channels?.telegram?.status === "sent" ? "sent" : "not connected"}
-                  {(a.actions ?? []).some((x: Row) => x.action !== "open") && (a.resolved_at ? " · ✓ done" : " · needs action")}
+                  {(a.actions ?? []).some((x: Row) => x.action !== "open") && (a.resolved_at ? " · done" : " · needs action")}
                 </p>
               </li>
             ))}

@@ -1,16 +1,18 @@
 "use client";
+import { ChevronDown, ChevronRight, Cog, ShieldCheck, Stamp, Store, Truck, Warehouse as WarehouseIcon, type LucideIcon } from "lucide-react";
 import { useMemo, useState } from "react";
 import { formatTime, ROLE_LABEL, STATUS_STYLE, timeAgo } from "./ui";
 
 type Event = { id: number; actor_role: string; actor_name: string | null; action: string; created_at: string };
 
-const ROLE_STYLE: Record<string, { dot: string; chip: string; icon: string }> = {
-  seller: { dot: "bg-sky-600", chip: "bg-sky-50 text-sky-800 ring-sky-200", icon: "S" },
-  warehouse: { dot: "bg-violet-600", chip: "bg-violet-50 text-violet-800 ring-violet-200", icon: "W" },
-  forwarder: { dot: "bg-indigo-600", chip: "bg-indigo-50 text-indigo-800 ring-indigo-200", icon: "F" },
-  carrier: { dot: "bg-teal-600", chip: "bg-teal-50 text-teal-800 ring-teal-200", icon: "C" },
-  admin: { dot: "bg-slate-800", chip: "bg-slate-100 text-slate-800 ring-slate-300", icon: "A" },
-  system: { dot: "bg-slate-400", chip: "bg-slate-50 text-slate-600 ring-slate-200", icon: "⚙" },
+/** Tracker dots: the seller in orange, the other people in ink, automatic updates small and grey. */
+const ROLE_STYLE: Record<string, { dot: string; chip: string; Icon: LucideIcon }> = {
+  seller: { dot: "bg-sky-500 text-slate-900 ring-sky-200", chip: "bg-sky-50 text-sky-800 ring-sky-200", Icon: Store },
+  warehouse: { dot: "bg-slate-900 text-white ring-slate-200", chip: "bg-slate-100 text-slate-800 ring-slate-300", Icon: WarehouseIcon },
+  forwarder: { dot: "bg-slate-900 text-white ring-slate-200", chip: "bg-slate-100 text-slate-800 ring-slate-300", Icon: Stamp },
+  carrier: { dot: "bg-slate-900 text-white ring-slate-200", chip: "bg-slate-100 text-slate-800 ring-slate-300", Icon: Truck },
+  admin: { dot: "bg-slate-900 text-white ring-slate-200", chip: "bg-slate-100 text-slate-800 ring-slate-300", Icon: ShieldCheck },
+  system: { dot: "bg-white text-slate-500 ring-slate-200", chip: "bg-slate-50 text-slate-600 ring-slate-200", Icon: Cog },
 };
 
 const dayLabel = (iso: string) => {
@@ -62,9 +64,9 @@ export function Timeline({ events }: { events: Event[] }) {
   });
 
   return (
-    <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+    <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-base font-semibold">Timeline <span className="text-sm font-normal text-slate-500">· {events.length} updates</span></h2>
+        <h2 className="text-lg font-bold tracking-tight">Timeline <span className="text-sm font-normal text-slate-500">· {events.length} updates</span></h2>
         <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filter by who made the change">
           {[...counts.keys()].filter((r) => r !== "system").map((r) => (
             <button key={r} onClick={() => toggle(r)} aria-pressed={roles.has(r)}
@@ -92,14 +94,19 @@ export function Timeline({ events }: { events: Event[] }) {
                 const expandable = details.length > 0;
                 return (
                   <li key={e.id} className="relative flex gap-3">
-                    <span className={`z-10 mt-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white ring-4 ring-white ${st.dot}`} aria-hidden>{st.icon}</span>
+                    <span className={`z-10 mt-1.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ring-4 ${st.dot}`} aria-hidden><st.Icon className="h-4 w-4" /></span>
                     <div className={`min-w-0 flex-1 rounded-lg px-3 py-2 ${expandable ? "cursor-pointer hover:bg-slate-50" : ""} ${e.actor_role === "system" ? "" : "bg-slate-50/60"}`}
                       onClick={() => expandable && setOpenId(open ? null : e.id)}>
                       <div className="flex flex-wrap items-baseline justify-between gap-2">
                         <p className={`text-sm ${e.actor_role === "system" ? "text-slate-600" : "font-medium text-slate-900"}`}>
                           {title}
                           {status && <span className={`ml-2 inline-flex rounded-full px-2 py-0.5 text-xs font-medium ring-1 ring-inset ${STATUS_STYLE[status] ?? ""}`}>{status}</span>}
-                          {expandable && <span className="ml-1.5 text-xs text-sky-700">{open ? "▾ hide" : `▸ ${details.length} details`}</span>}
+                          {expandable && (
+                            <span className="ml-1.5 inline-flex items-center gap-0.5 text-xs font-medium text-sky-700">
+                              {open ? <ChevronDown className="h-3.5 w-3.5" aria-hidden /> : <ChevronRight className="h-3.5 w-3.5" aria-hidden />}
+                              {open ? "hide" : `${details.length} details`}
+                            </span>
+                          )}
                         </p>
                         <time className="text-xs text-slate-500" dateTime={e.created_at} title={formatTime(e.created_at)}>{timeAgo(e.created_at)}</time>
                       </div>
@@ -121,7 +128,7 @@ export function Timeline({ events }: { events: Event[] }) {
         ))}
       </div>
       {filtered.length > limit && (
-        <button className="mt-4 text-sm font-medium text-sky-700 hover:underline" onClick={() => setLimit((l) => l + 30)}>
+        <button className="mt-4 text-sm font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline focus-visible:underline" onClick={() => setLimit((l) => l + 30)}>
           Show older updates ({filtered.length - limit} more)
         </button>
       )}

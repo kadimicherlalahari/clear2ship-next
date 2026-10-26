@@ -25,7 +25,7 @@ export default async function ActPage({ params }: { params: Promise<{ token: str
       ) : (
         <ConfirmAction token={token} label={action.label} description={describeAction(action, shipment)} shipmentId={shipment.id} />
       )}
-      <Link href={`/shipments/${shipment.id}`} className="mt-4 inline-block text-sm text-sky-700 hover:underline">Open {shipment.id} in Clear2Ship →</Link>
+      <Link href={`/shipments/${shipment.id}`} className="mt-4 inline-block text-sm font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline focus-visible:underline">Open {shipment.id} in Clear2Ship →</Link>
     </Box>
   );
 }

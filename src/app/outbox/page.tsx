@@ -19,7 +19,7 @@ export default async function Outbox() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">Email log</h1>
+        <h1 className="text-4xl sm:text-5xl">Email <span className="text-sky-600">log.</span></h1>
         <p className="text-sm text-slate-600">
           Every email Clear2Ship has sent or tried to send, to sellers, carriers, warehouses, forwarders and admins. Sellers see their updates under Alerts.{" "}
           {connected ? "Email is connected through Resend." : "Email isn't connected yet, so emails are only saved here."}
@@ -36,7 +36,7 @@ export default async function Outbox() {
               </p>
             </div>
             <p className="text-xs text-slate-500">
-              {KIND[m.kind] ?? m.kind} · to {m.to_address} · <Link href={`/shipments/${m.shipment_id}`} className="text-sky-700 hover:underline">{m.shipment_id}</Link>
+              {KIND[m.kind] ?? m.kind} · to {m.to_address} · <Link href={`/shipments/${m.shipment_id}`} className="font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline focus-visible:underline">{m.shipment_id}</Link>
               {" · "}<span className={m.provider_id ? "text-green-700" : "text-amber-700"}>{m.provider_id ? "Sent" : m.error}</span>
             </p>
             <details className="mt-2">

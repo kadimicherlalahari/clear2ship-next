@@ -1,4 +1,5 @@
 "use client";
+import { Check } from "lucide-react";
 import { useState } from "react";
 import {
   ALL_DESTINATION_CITIES, BOOKING_LABELS, DESTINATIONS, DESTINATION_COUNTRIES, DESTINATION_TYPES, ITEM_LABELS, ITEM_ORIGINS,
@@ -158,7 +159,7 @@ function FixRow({ shipmentId, issue, plan, act, busy }: { shipmentId: string; is
         }}>Remove {plan.removeSku} from the booking</Button>
       )}
       {plan.note && (
-        <p className="text-xs text-slate-600">{plan.anchor ? <a className="text-sky-700 hover:underline" href={plan.anchor}>{plan.note}</a> : plan.note}</p>
+        <p className="text-xs text-slate-600">{plan.anchor ? <a className="font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline focus-visible:underline" href={plan.anchor}>{plan.note}</a> : plan.note}</p>
       )}
       {error && <p role="alert" className="mt-1.5 text-sm font-medium text-red-700">{error}</p>}
     </div>
@@ -271,12 +272,12 @@ function IssueItem({ issue, shipment, items, canFix, act, busy }: { issue: Issue
           <p className="font-medium text-slate-900">{issue.message}</p>
           <p className="text-slate-600"><span className="font-medium">How to fix:</span> {issue.fix}</p>
           <p className="text-xs text-slate-500">Who should fix it: {ROLE_LABEL[issue.owner] ?? issue.owner}</p>
-          {ticked && <p className="mt-1 text-xs font-medium text-green-800">✓ Checked by {ack.by} · {formatTime(ack.at)}</p>}
+          {ticked && <p className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-green-800"><Check className="h-3.5 w-3.5" aria-hidden /> Checked by {ack.by} · {formatTime(ack.at)}</p>}
         </div>
         {canTick && !ticked && (
           <Button variant="secondary" disabled={busy} onClick={() => act(
             () => postJson(`/api/shipments/${shipment.id}/actions`, { action: "acknowledge", issueKey: issue.key }), "Marked as checked.")}>
-            ✓ I&apos;ve checked this
+            <Check className="h-4 w-4" aria-hidden /> I&apos;ve checked this
           </Button>
         )}
       </div>

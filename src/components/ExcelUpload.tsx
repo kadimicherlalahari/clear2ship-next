@@ -33,7 +33,7 @@ export function ExcelUpload() {
       <div>
         <p className="text-sm text-slate-600">
           Upload the Clear2Ship template with the <b>Bookings</b> and <b>Items</b> sheets. Each booking is checked and saved as a draft.{" "}
-          <a href="/bookings_template.xlsx" className="font-medium text-sky-700 hover:underline">Download the template</a>
+          <a href="/bookings_template.xlsx" className="font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline focus-visible:underline">Download the template</a>
         </p>
       </div>
       <Card>
@@ -60,7 +60,7 @@ export function ExcelUpload() {
                   <>
                     <div className="flex flex-wrap items-center gap-3">
                       <LevelBadge level={r.overall ?? ""} />
-                      <Link href={`/shipments/${r.id}`} className="font-semibold text-sky-700 hover:underline">{r.id}</Link>
+                      <Link href={`/shipments/${r.id}`} className="font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline focus-visible:underline">{r.id}</Link>
                       <span className="flex-1 text-sm text-slate-700">{r.headline}</span>
                       <Button variant="ghost" onClick={() => setOpen(open === r.id ? null : r.id)} aria-expanded={open === r.id}>
                         {open === r.id ? "Hide details" : "Details"}

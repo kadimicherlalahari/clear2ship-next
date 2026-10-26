@@ -37,7 +37,7 @@ export default function NewBooking() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-semibold">New booking</h1>
+        <h1 className="text-4xl sm:text-5xl">New <span className="text-sky-600">booking.</span></h1>
         <p className="text-sm text-slate-600">Describe the shipment in chat, fill in the form, or upload several bookings from Excel.</p>
       </div>
       <div role="tablist" aria-label="How to add the booking" className="inline-flex rounded-lg bg-slate-200 p-1 text-sm">

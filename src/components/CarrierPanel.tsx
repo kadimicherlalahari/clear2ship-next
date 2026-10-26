@@ -1,4 +1,5 @@
 "use client";
+import { X } from "lucide-react";
 import { PRIORITIES } from "@/lib/rules/constants";
 import type { CarrierOption, CarrierResult } from "@/lib/rules/types";
 import { Card, InfoNote, postJson } from "./ui";
@@ -137,7 +138,7 @@ export function CarrierPanel({ carrier, shipment, canChoose, act, busy }: {
       {carrier.removed.length > 0 && (
         <details className="mt-2 text-xs text-slate-500">
           <summary className="cursor-pointer">{carrier.removed.length} carrier{carrier.removed.length === 1 ? "" : "s"} can&apos;t take this load ({carrier.weightPerPallet.toLocaleString("en-GB")} kg per pallet)</summary>
-          <ul className="mt-1 space-y-0.5">{carrier.removed.map((r) => <li key={r}>✕ {r}</li>)}</ul>
+          <ul className="mt-1 space-y-0.5">{carrier.removed.map((r) => <li key={r} className="flex items-start gap-1"><X className="mt-px h-3.5 w-3.5 shrink-0" aria-hidden />{r}</li>)}</ul>
         </details>
       )}
       {!canChoose && <p className="mt-3 text-xs text-slate-500">Switch to the Seller role to choose a carrier.</p>}

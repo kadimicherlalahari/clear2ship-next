@@ -1,4 +1,5 @@
 "use client";
+import { Check, Minus } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button, Card, ErrorNote, formatTime, InfoNote, postJson, ROLE_LABEL } from "./ui";
 
@@ -43,7 +44,7 @@ export function SubmitPanel({ shipment, readiness, canSubmit, act, busy, carrier
       <ul className="mb-4 space-y-1.5">
         {readiness.items.map((i) => (
           <li key={i.key} className="flex items-start gap-2 text-sm">
-            <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold ${i.ok ? "bg-green-600 text-white" : "bg-slate-200 text-slate-500"}`}>{i.ok ? "✓" : "–"}</span>
+            <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold ${i.ok ? "bg-green-600 text-white" : "bg-slate-200 text-slate-500"}`}>{i.ok ? <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden /> : <Minus className="h-3.5 w-3.5" aria-hidden />}</span>
             <span><span className={i.ok ? "text-slate-900" : "font-medium text-slate-900"}>{i.label}</span> <span className="text-slate-500">· {i.detail}</span></span>
           </li>
         ))}
@@ -151,7 +152,7 @@ export function ConfirmationsPanel({ shipment: s, role, act, busy, canChooseCarr
               <p className="text-red-800">Declined: {s.carrier_note}</p>
               {canChooseCarrier ? (
                 <div className="flex flex-wrap items-center gap-2">
-                  <a href="#carrier" className="text-sky-700 hover:underline">Choose another carrier</a>
+                  <a href="#carrier" className="font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline focus-visible:underline">Choose another carrier</a>
                   <Button disabled={busy || !s.selected_carrier} onClick={() => post({ action: "resend-carrier" }, `Collection request sent to ${s.selected_carrier}.`)}>
                     Send request{ s.selected_carrier ? ` to ${s.selected_carrier}` : ""}
                   </Button>

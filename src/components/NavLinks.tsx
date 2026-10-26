@@ -27,15 +27,15 @@ export function NavLinks({ role, unread = 0 }: { role: string; unread?: number }
   const path = usePathname();
   const links = NAV[role] ?? NAV.seller;
   return (
-    <nav className="flex flex-wrap gap-1 text-sm">
+    <nav className="flex flex-wrap gap-0.5 text-sm">
       {links.map((n) => {
         const active = n.href === "/" ? path === "/" : path.startsWith(n.href);
         return (
           <Link key={n.href} href={n.href} aria-current={active ? "page" : undefined}
-            className={`rounded-md px-2.5 py-1 hover:bg-slate-800 hover:text-white ${active ? "bg-slate-800 text-white" : "text-slate-200"}`}>
+            className={`inline-flex items-center rounded-full px-3.5 py-1.5 font-medium transition ${active ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}>
             {n.label}
             {n.href === "/alerts" && unread > 0 && (
-              <span className="ml-1.5 rounded-full bg-red-500 px-1.5 py-0.5 text-[11px] font-bold text-white" aria-label={`${unread} unread`}>{unread}</span>
+              <span className="ml-1.5 rounded-full bg-sky-500 px-1.5 py-0.5 text-[11px] font-bold text-slate-900" aria-label={`${unread} unread`}>{unread}</span>
             )}
           </Link>
         );

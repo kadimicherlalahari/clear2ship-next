@@ -79,7 +79,7 @@ export function Chat({ shipmentId: initialId = null, initialMessages = [], onRep
 
       {shipmentId && !onReply && (
         <p className="text-sm text-slate-600">
-          Saved as draft <Link className="font-medium text-sky-700 hover:underline" href={`/shipments/${shipmentId}`}>{shipmentId}</Link>. Upload documents and submit from the shipment page.
+          Saved as draft <Link className="font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline focus-visible:underline" href={`/shipments/${shipmentId}`}>{shipmentId}</Link>. Upload documents and submit from the shipment page.
         </p>
       )}
 

@@ -1,4 +1,5 @@
 "use client";
+import { X } from "lucide-react";
 import { useState } from "react";
 import {
   ALL_DESTINATION_CITIES, DESTINATIONS, DESTINATION_COUNTRIES, DESTINATION_TYPES, ITEM_ORIGINS, ORIGIN_CITIES, PRIORITIES,
@@ -130,7 +131,7 @@ export function BookingForm({ initial, initialEmail = "", submitLabel, onSubmit,
                       </td>
                     ))}
                     <td className="px-1">
-                      <Button type="button" variant="ghost" aria-label={`Remove item ${i + 1}`} onClick={() => setV((p) => ({ ...p, items: p.items.filter((_, j) => j !== i) }) as FormBooking)}>✕</Button>
+                      <Button type="button" variant="ghost" aria-label={`Remove item ${i + 1}`} onClick={() => setV((p) => ({ ...p, items: p.items.filter((_, j) => j !== i) }) as FormBooking)}><X className="h-4 w-4" aria-hidden /></Button>
                     </td>
                   </tr>
                 ))}

@@ -1,4 +1,7 @@
 "use client";
+import { Check } from "lucide-react";
+import type { CSSProperties } from "react";
+import { IsoGroup, IsoSvg, van, VanWheels } from "./illustrations/iso";
 
 type Row = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -27,31 +30,59 @@ export function stageOf(s: Row): { index: number; note: string; tone: "ok" | "re
   return { index: 2, note: status === "Action required" ? "Action required" : "Waiting for the goods check", tone: status === "Action required" ? "red" : "ok" };
 }
 
+/**
+ * The shipment's road: six stops on asphalt with lane dashes, done ones ticked, the current one
+ * orange (red or amber when stuck), and a small van that drives in from the previous stop once.
+ */
 export function Pipeline({ shipment }: { shipment: Row }) {
   const { index, note, tone } = stageOf(shipment);
-  const current = { ok: "bg-sky-600 ring-sky-200", red: "bg-red-600 ring-red-200", amber: "bg-amber-500 ring-amber-200" }[tone];
-  const noteColor = { ok: "text-sky-800", red: "text-red-700", amber: "text-amber-800" }[tone];
   const done = shipment.status === "Delivered";
+  const noteColor = { ok: "text-slate-700", red: "text-red-700", amber: "text-amber-800" }[tone];
+  const stop = done ? STAGES.length - 1 : index;
+  const at = (i: number) => `calc(9px + (100% - 18px) * ${i / (STAGES.length - 1)})`;
   return (
-    <nav aria-label="Shipment progress" className="mt-2">
-      <ol className="flex flex-wrap items-center gap-y-1 text-xs">
+    <nav aria-label="Shipment progress" className="mt-3 w-full max-w-xl">
+      <p className="sr-only">Stage {index + 1} of {STAGES.length}: {STAGES[index]}, {note}</p>
+      <div className="relative h-14" aria-hidden>
+        {/* the road: asphalt with orange lane dashes */}
+        <div className="absolute left-0 right-0 top-[34px] h-[12px] rounded-full bg-slate-800">
+          <div className="absolute inset-x-3 top-[5px] h-[2px] bg-[repeating-linear-gradient(90deg,var(--color-sky-500)_0_8px,transparent_8px_16px)]" />
+        </div>
         {STAGES.map((label, i) => {
           const isDone = i < index || done;
           const isCurrent = i === index && !done;
+          const tint = isCurrent ? { ok: "bg-sky-500", red: "bg-red-600", amber: "bg-amber-400" }[tone] : "";
           return (
-            <li key={label} className="flex items-center" aria-current={isCurrent ? "step" : undefined}>
-              <span className="flex items-center gap-1.5">
-                <span className={`flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold text-white ${isDone ? "bg-green-600" : isCurrent ? `${current} ring-4` : "bg-slate-300"}`}>
-                  {isDone ? "✓" : ""}
-                </span>
-                <span className={isCurrent ? "font-semibold text-slate-900" : isDone ? "text-slate-700" : "text-slate-400"}>{label}</span>
-                {isCurrent && <span className={`font-medium ${noteColor}`}>· {note}</span>}
+            <span key={label} className="absolute top-[31px] -translate-x-1/2" style={{ left: at(i) }}>
+              <span className={`flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-slate-900 ${isDone ? "bg-white" : isCurrent ? tint : "bg-slate-200"}`}>
+                {isDone && <Check className="h-2.5 w-2.5" strokeWidth={4} />}
               </span>
-              {i < STAGES.length - 1 && <span className={`mx-2 h-px w-5 sm:w-8 ${i < index ? "bg-green-600" : "bg-slate-300"}`} aria-hidden />}
+            </span>
+          );
+        })}
+        {/* the van drives from the previous stop to this one, once */}
+        <span className="road-van absolute top-[9px] -translate-x-[38%]" style={{ "--from": at(Math.max(0, stop - 1)), "--to": at(stop), left: at(stop) } as CSSProperties}>
+          <IsoSvg viewBox="-34 -38 76 52" label="" aria-hidden className="h-7 w-[40px] drop-shadow-sm">
+            <IsoGroup prisms={van(-30, -12)} />
+            <VanWheels x={-30} y={-12} />
+          </IsoSvg>
+        </span>
+      </div>
+      <ol className="relative mt-1.5 hidden h-4 text-[11px] leading-none sm:block">
+        {STAGES.map((label, i) => {
+          const isDone = i < index || done;
+          const isCurrent = i === index && !done;
+          const edge = i === 0 ? "translate-x-0" : i === STAGES.length - 1 ? "-translate-x-full" : "-translate-x-1/2";
+          return (
+            <li key={label} aria-current={isCurrent ? "step" : undefined}
+              className={`absolute whitespace-nowrap ${edge} ${isCurrent ? "font-semibold text-slate-900" : isDone ? "text-slate-600" : "text-slate-400"}`}
+              style={{ left: i === 0 ? 0 : i === STAGES.length - 1 ? "100%" : at(i) }}>
+              {label}
             </li>
           );
         })}
       </ol>
+      <p className={`mt-1.5 text-sm font-medium ${done ? "text-green-700" : noteColor}`}>{done ? "Delivered" : `${STAGES[index]} · ${note}`}</p>
     </nav>
   );
 }

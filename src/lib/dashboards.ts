@@ -85,3 +85,31 @@ export async function carrierDashboard() {
   ]);
   return { requests: withArrival(requests), scheduled: withArrival(scheduled), history: withArrival(history) };
 }
+
+/**
+ * Bookings waiting on the seller (the hero's "Need you now" count): what to do, the main problem,
+ * how long it has been waiting, and the numbers behind it. Most urgent first.
+ */
+export async function sellerTasks() {
+  const rows = await q(
+    `SELECT ${SHIPMENT_COLS},
+            (SELECT count(*)::int FROM issues x WHERE x.shipment_id = s.id AND x.status = 'open' AND x.severity = 'AMBER') AS ambers,
+            (SELECT x.message FROM issues x WHERE x.shipment_id = s.id AND x.status = 'open'
+               ORDER BY (x.severity = 'RED') DESC, x.first_seen_at LIMIT 1) AS top_issue,
+            (SELECT x.fix FROM issues x WHERE x.shipment_id = s.id AND x.status = 'open'
+               ORDER BY (x.severity = 'RED') DESC, x.first_seen_at LIMIT 1) AS top_fix,
+            (SELECT count(*)::int FROM alerts a WHERE a.shipment_id = s.id AND a.resolved_at IS NULL
+               AND a.actions IS NOT NULL AND a.severity IN ('warning', 'error')) AS open_alerts,
+            COALESCE(
+              CASE WHEN s.customs_status IN ('On hold', 'Rejected')
+                THEN (SELECT max(m.confirmed_at) FROM customs_messages m WHERE m.shipment_id = s.id AND m.confirmed_status = s.customs_status) END,
+              (SELECT min(x.first_seen_at) FROM issues x WHERE x.shipment_id = s.id AND x.status = 'open' AND x.severity = 'RED'),
+              (SELECT max(a.created_at) FROM alerts a WHERE a.shipment_id = s.id AND a.resolved_at IS NULL AND a.actions IS NOT NULL),
+              s.updated_at
+            ) AS waiting_since
+       FROM shipments s
+      WHERE s.responsible_role = 'seller' AND s.status <> 'Draft'
+      ORDER BY (SELECT count(*) FROM issues x WHERE x.shipment_id = s.id AND x.status = 'open' AND x.severity = 'RED') DESC, waiting_since`,
+  );
+  return rows;
+}

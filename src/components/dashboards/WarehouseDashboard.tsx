@@ -1,8 +1,11 @@
 "use client";
+import { Check, X } from "lucide-react";
 import { useState } from "react";
+import { WarehouseScene } from "../illustrations/scenes";
+import { RoleHero } from "../RoleHero";
 import { postJson } from "../ui";
 import {
-  dayName, dmy, Empty, inputCls, kg, Kpis, RowMessage, ShipmentLink, Stage, Tabs, todayIso, useRowAction, type Row,
+  dayName, dmy, Empty, inputCls, kg, RowMessage, ShipmentLink, Stage, Tabs, todayIso, useRowAction, type Row,
 } from "./common";
 import { Button } from "../ui";
 
@@ -29,7 +32,7 @@ function Delivery({ s, run, busy, msg }: { s: Row; run: ReturnType<typeof useRow
       <div className="w-full sm:w-72">
         {received ? (
           <p className={`text-sm font-medium ${s.warehouse_result === "accepted" ? "text-green-700" : "text-red-700"}`}>
-            {s.warehouse_result === "accepted" ? "✓ Received and accepted" : `✕ Rejected: ${s.warehouse_note}`}
+            {s.warehouse_result === "accepted" ? <><Check className="mr-1 inline h-4 w-4" aria-hidden />Received and accepted</> : <><X className="mr-1 inline h-4 w-4" aria-hidden />Rejected: {s.warehouse_note}</>}
           </p>
         ) : (
           <div className="space-y-1.5">
@@ -125,17 +128,21 @@ export function WarehouseDashboard({ data }: { data: Data }) {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold">Warehouse: deliveries</h1>
-        <p className="text-sm text-slate-600">Inbound deliveries from all sellers: booked slots, slot requests to answer, and what happened to each delivery.</p>
-      </div>
-      <Kpis items={[
-        { label: "Arriving today", value: notReceived.filter((s) => day(s) === today).length, tone: "sky" },
-        { label: "Next 7 days", value: data.scheduled.filter((s) => day(s) >= today && day(s) <= weekEnd).length },
-        { label: "Slot requests to answer", value: data.pending.filter((s) => s.appointment_status === "requested").length, tone: "amber" },
-        { label: "Waiting for seller (proposed)", value: data.pending.filter((s) => s.appointment_status === "proposed").length },
-        { label: "Goods rejected, open", value: data.history.filter((s) => s.warehouse_result === "mismatch" && s.status === "Mismatch").length, tone: "red" },
-      ]} />
+      <RoleHero
+        lead="Every dock,"
+        accent="on time."
+        sentence="Slot requests to answer, today's deliveries to check, and what happened to every delivery, for all sellers."
+        note="dock's open!"
+        noteAt="bottom-left"
+        scene={<WarehouseScene className="h-auto w-full" />}
+        stats={[
+          { label: "Arriving today", value: notReceived.filter((s) => day(s) === today).length },
+          { label: "Next 7 days", value: data.scheduled.filter((s) => day(s) >= today && day(s) <= weekEnd).length },
+          { label: "Slot requests to answer", value: data.pending.filter((s) => s.appointment_status === "requested").length, tone: "orange" },
+          { label: "Waiting for seller", value: data.pending.filter((s) => s.appointment_status === "proposed").length },
+          { label: "Goods rejected, open", value: data.history.filter((s) => s.warehouse_result === "mismatch" && s.status === "Mismatch").length, tone: "red" },
+        ]}
+      />
 
       <div className="grid grid-cols-7 gap-1.5" aria-label="Deliveries in the next 7 days">
         {week.map((d) => {
@@ -198,8 +205,8 @@ export function WarehouseDashboard({ data }: { data: Data }) {
                         <td className="px-3 py-2.5"><ShipmentLink s={s} /></td>
                         <td className="px-3 py-2.5">{slotText(s)}</td>
                         <td className="px-3 py-2.5">
-                          {s.warehouse_result === "accepted" ? <span className="text-green-700">✓ Accepted {dmy(s.goods_received_at)}</span>
-                            : s.warehouse_result === "mismatch" ? <span className="text-red-700">✕ Rejected: {s.warehouse_note}</span>
+                          {s.warehouse_result === "accepted" ? <span className="text-green-700"><Check className="mr-1 inline h-4 w-4" aria-hidden />Accepted {dmy(s.goods_received_at)}</span>
+                            : s.warehouse_result === "mismatch" ? <span className="text-red-700"><X className="mr-1 inline h-4 w-4" aria-hidden />Rejected: {s.warehouse_note}</span>
                             : <span className="text-slate-500">Not received</span>}
                         </td>
                         <td className="px-3 py-2.5"><Stage s={s} /></td>

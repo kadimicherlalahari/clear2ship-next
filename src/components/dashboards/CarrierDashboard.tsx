@@ -1,7 +1,9 @@
 "use client";
 import { useState } from "react";
+import { CarrierScene } from "../illustrations/scenes";
+import { RoleHero } from "../RoleHero";
 import { Button, postJson, StatusBadge } from "../ui";
-import { dayName, dmy, Empty, inputCls, kg, Kpis, RowMessage, ShipmentLink, Tabs, useRowAction, type Row } from "./common";
+import { dayName, dmy, Empty, inputCls, kg, RowMessage, ShipmentLink, Tabs, useRowAction, type Row } from "./common";
 
 type Data = { requests: Row[]; scheduled: Row[]; history: Row[] };
 const CARRIER_NAMES = ["Carrier A", "Carrier B", "Carrier C"];
@@ -42,20 +44,26 @@ export function CarrierDashboard({ data }: { data: Data }) {
   const mine = (rows: Row[]) => rows.filter((s) => carrier === "All" || s.selected_carrier === carrier || (s.carrier_note ?? "").startsWith(carrier));
   return (
     <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold">Carrier: collections</h1>
-          <p className="text-sm text-slate-600">Collection requests from sellers, and the collections you&apos;ve booked.</p>
-        </div>
-        <label className="text-sm">Show <select className={inputCls} value={carrier} onChange={(e) => setCarrier(e.target.value)}>
-          <option>All</option>{CARRIER_NAMES.map((c) => <option key={c}>{c}</option>)}
-        </select></label>
+      <RoleHero
+        lead="Pick up. Move."
+        accent="Deliver."
+        sentence="Collection requests from sellers to confirm or decline, and the collections you've booked."
+        note="on the road!"
+        noteAt="bottom-left"
+        scene={<CarrierScene className="h-auto w-full" />}
+        stats={[
+          { label: "Requests to answer", value: mine(data.requests).length, tone: "orange" },
+          { label: "Collections booked", value: mine(data.scheduled).length },
+          { label: "Pallets booked", value: mine(data.scheduled).reduce((t, s) => t + Number(s.pallets ?? 0), 0) },
+        ]}
+      />
+      <div className="flex justify-end">
+        <label className="flex items-center gap-2 text-sm text-slate-600">Show carrier
+          <select className={`${inputCls} rounded-full px-3`} value={carrier} onChange={(e) => setCarrier(e.target.value)}>
+            <option>All</option>{CARRIER_NAMES.map((c) => <option key={c}>{c}</option>)}
+          </select>
+        </label>
       </div>
-      <Kpis items={[
-        { label: "Requests to answer", value: mine(data.requests).length, tone: "amber" },
-        { label: "Collections booked", value: mine(data.scheduled).length, tone: "sky" },
-        { label: "Pallets booked", value: mine(data.scheduled).reduce((t, s) => t + Number(s.pallets ?? 0), 0) },
-      ]} />
       <Tabs tabs={[
         {
           id: "requests", label: "Collection requests", count: mine(data.requests).length,

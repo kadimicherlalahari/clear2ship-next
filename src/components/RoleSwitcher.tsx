@@ -44,7 +44,7 @@ export function RoleSwitcher() {
 
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm">
-      <label htmlFor="role" className="text-slate-300">Acting as</label>
+      <label htmlFor="role" className="text-slate-500">Acting as</label>
       <select
         id="role"
         value={role}
@@ -57,7 +57,7 @@ export function RoleSwitcher() {
           if (!isSellerRole(e.target.value) && SELLER_ONLY_PATHS.some((p) => path.startsWith(p))) router.push("/");
           router.refresh();
         }}
-        className="rounded-md border-0 bg-slate-800 px-2 py-1 text-white ring-1 ring-slate-600 focus:ring-2 focus:ring-sky-400"
+        className="rounded-full border-0 bg-slate-900 py-1.5 pl-3.5 pr-8 font-semibold text-white focus:ring-2 focus:ring-sky-400"
       >
         {ROLES.map((r) => <option key={r.id} value={r.id}>{r.label}</option>)}
       </select>
@@ -67,7 +67,7 @@ export function RoleSwitcher() {
         value={name}
         maxLength={60}
         onChange={(e) => { setName(e.target.value); setCookie("c2s_name", e.target.value); }}
-        className="w-40 rounded-md border-0 bg-slate-800 px-2 py-1 text-white placeholder:text-slate-400 ring-1 ring-slate-600 focus:ring-2 focus:ring-sky-400"
+        className="w-36 rounded-full border-0 bg-slate-100 px-3.5 py-1.5 text-slate-900 placeholder:text-slate-500 focus:ring-2 focus:ring-sky-400"
       />
     </div>
   );

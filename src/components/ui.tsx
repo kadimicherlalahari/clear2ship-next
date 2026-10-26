@@ -3,8 +3,8 @@ import type { ReactNode } from "react";
 
 export const STATUS_STYLE: Record<string, string> = {
   Draft: "bg-slate-100 text-slate-700 ring-slate-300",
-  "Docs submitted": "bg-sky-50 text-sky-800 ring-sky-300",
-  "Warehouse accepted": "bg-sky-50 text-sky-800 ring-sky-300",
+  "Docs submitted": "bg-white text-slate-700 ring-slate-300",
+  "Warehouse accepted": "bg-white text-slate-700 ring-slate-300",
   Mismatch: "bg-orange-50 text-orange-800 ring-orange-300",
   "Action required": "bg-red-50 text-red-800 ring-red-300",
   "Ready for customs": "bg-teal-50 text-teal-800 ring-teal-300",
@@ -37,10 +37,10 @@ export function LevelBadge({ level }: { level: string }) {
 
 export function Card({ title, children, actions, className = "" }: { title?: ReactNode; children: ReactNode; actions?: ReactNode; className?: string }) {
   return (
-    <section className={`rounded-xl border border-slate-200 bg-white p-5 shadow-sm ${className}`}>
+    <section className={`rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6 ${className}`}>
       {(title || actions) && (
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          {title && <h2 className="text-base font-semibold text-slate-900">{title}</h2>}
+          {title && <h2 className="text-lg font-bold tracking-tight text-slate-900">{title}</h2>}
           {actions}
         </div>
       )}
@@ -50,14 +50,15 @@ export function Card({ title, children, actions, className = "" }: { title?: Rea
 }
 
 export function Button({ children, variant = "primary", className = "", ...props }:
-  React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "secondary" | "danger" | "ghost" }) {
+  React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: "primary" | "accent" | "secondary" | "danger" | "ghost" }) {
   const styles = {
-    primary: "bg-slate-900 text-white hover:bg-slate-700 disabled:bg-slate-400",
-    secondary: "bg-white text-slate-900 ring-1 ring-inset ring-slate-300 hover:bg-slate-50 disabled:text-slate-400",
-    danger: "bg-red-600 text-white hover:bg-red-500 disabled:bg-red-300",
+    primary: "bg-slate-900 text-white hover:bg-slate-800 hover:shadow-md active:translate-y-px disabled:bg-slate-300 disabled:text-slate-600 disabled:shadow-none",
+    accent: "bg-sky-500 text-slate-900 hover:bg-sky-400 hover:shadow-md active:translate-y-px disabled:bg-slate-300 disabled:text-slate-600 disabled:shadow-none",
+    secondary: "bg-white text-slate-900 ring-1 ring-inset ring-slate-300 hover:ring-slate-900 active:translate-y-px disabled:text-slate-400 disabled:ring-slate-200",
+    danger: "bg-red-600 text-white hover:bg-red-700 active:translate-y-px disabled:bg-red-300",
     ghost: "text-slate-700 hover:bg-slate-100",
   }[variant];
-  return <button {...props} className={`inline-flex items-center justify-center gap-1 rounded-lg px-3 py-1.5 text-sm font-medium transition disabled:cursor-not-allowed ${styles} ${className}`}>{children}</button>;
+  return <button {...props} className={`inline-flex items-center justify-center gap-1.5 rounded-full px-4 py-2 text-sm font-semibold transition duration-150 disabled:cursor-not-allowed ${styles} ${className}`}>{children}</button>;
 }
 
 export function ErrorNote({ text }: { text: string | null | undefined }) {

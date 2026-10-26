@@ -1,4 +1,5 @@
 "use client";
+import { Check, X } from "lucide-react";
 import { validateDetail, type DetailValue, type DocDetails } from "@/lib/docDetails";
 import { Card } from "./ui";
 
@@ -18,7 +19,7 @@ function OvTable({ title, rows }: { title: string; rows: OvRow[] }) {
         <tbody className="divide-y divide-slate-100">
           {rows.map((r) => (
             <tr key={r.label}>
-              <td className="w-6 py-1.5 align-top">{r.value ? <span className="text-green-600" aria-label="provided">✓</span> : <span className="text-red-600" aria-label="missing">✗</span>}</td>
+              <td className="w-6 py-1.5 align-top">{r.value ? <Check className="h-4 w-4 text-green-600" aria-label="provided" /> : <X className="h-4 w-4 text-red-600" aria-label="missing" />}</td>
               <td className="w-48 py-1.5 pr-2 align-top text-slate-600">{r.label}</td>
               <td className="py-1.5 pr-2 align-top font-medium">{r.value ?? <span className="font-normal text-red-700">Missing</span>}</td>
               <td className="hidden py-1.5 align-top text-xs text-slate-500 sm:table-cell">{r.source}</td>

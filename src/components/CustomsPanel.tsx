@@ -1,4 +1,5 @@
 "use client";
+import { Check, Paperclip } from "lucide-react";
 import { useState } from "react";
 import { api, Button, Card, formatTime, InfoNote, postJson, ROLE_LABEL } from "./ui";
 
@@ -65,7 +66,7 @@ function Replies({ replies, shipmentId }: { replies: Row[]; shipmentId: string }
           <p className="text-xs text-slate-500">{ROLE_LABEL[r.created_by] ?? r.created_by} replied · {formatTime(r.created_at)}</p>
           <p className="whitespace-pre-wrap">{r.message}</p>
           {r.document_id && (
-            <a className="text-xs text-sky-700 hover:underline" href={`/api/shipments/${shipmentId}/documents/${r.document_id}/file`} target="_blank" rel="noreferrer">📎 {r.filename}</a>
+            <a className="text-xs font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline focus-visible:underline" href={`/api/shipments/${shipmentId}/documents/${r.document_id}/file`} target="_blank" rel="noreferrer"><Paperclip className="mr-1 inline h-3.5 w-3.5" aria-hidden />{r.filename}</a>
           )}
         </li>
       ))}
@@ -89,7 +90,7 @@ export function CustomsExceptionPanel({ shipment: s, replies, canReply, act, bus
           <p className="mt-1 text-xs text-slate-600">Who has to act: {ROLE_LABEL[s.customs_responsible] ?? "Seller"} · confirmed by a person, never set automatically.</p>
         </div>
         {s.customs_reply_at ? (
-          <p className="font-medium text-green-800">✓ Reply sent to your forwarder {formatTime(s.customs_reply_at)}. They&apos;ll resubmit to customs.</p>
+          <p className="inline-flex items-center gap-1.5 font-medium text-green-800"><Check className="h-4 w-4" aria-hidden /> Reply sent to your forwarder {formatTime(s.customs_reply_at)}. They&apos;ll resubmit to customs.</p>
         ) : rejected ? (
           <p className="text-slate-700">You can now correct the booking, items and documents on this page. Then tell your forwarder what you changed below.</p>
         ) : null}

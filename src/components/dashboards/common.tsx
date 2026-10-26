@@ -1,4 +1,5 @@
 "use client";
+import { PackageOpen } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
@@ -16,31 +17,17 @@ export const todayIso = () => new Intl.DateTimeFormat("en-CA", { timeZone: "Euro
 export const kg = (v: unknown) => (v == null ? "–" : `${Number(v).toLocaleString("en-GB", { maximumFractionDigits: 1 })} kg`);
 export const daysSince = (v: unknown) => (v ? Math.max(0, Math.floor((Date.now() - new Date(String(v)).getTime()) / 864e5)) : 0);
 
-export function Kpis({ items }: { items: { label: string; value: number | string; tone?: "red" | "amber" | "green" | "sky" }[] }) {
-  const tone = { red: "text-red-700", amber: "text-amber-700", green: "text-green-700", sky: "text-sky-700" };
-  return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
-      {items.map((k) => (
-        <div key={k.label} className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm">
-          <p className={`text-2xl font-semibold tabular-nums ${k.tone ? tone[k.tone] : "text-slate-900"}`}>{k.value}</p>
-          <p className="text-xs text-slate-500">{k.label}</p>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 export function Tabs({ tabs, initial }: { tabs: { id: string; label: string; count?: number; content: ReactNode }[]; initial?: string }) {
   const [tab, setTab] = useState(initial ?? tabs[0].id);
   const active = tabs.find((t) => t.id === tab) ?? tabs[0];
   return (
     <div>
-      <div role="tablist" className="mb-4 flex flex-wrap gap-1 border-b border-slate-200">
+      <div role="tablist" className="mb-4 inline-flex max-w-full flex-wrap gap-1 rounded-[1.4rem] bg-white p-1 shadow-sm ring-1 ring-slate-200/80">
         {tabs.map((t) => (
           <button key={t.id} role="tab" aria-selected={t.id === active.id} onClick={() => setTab(t.id)}
-            className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${t.id === active.id ? "border-slate-900 text-slate-900" : "border-transparent text-slate-500 hover:text-slate-800"}`}>
+            className={`inline-flex items-center rounded-full px-3.5 py-1.5 text-sm font-semibold transition ${t.id === active.id ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"}`}>
             {t.label}
-            {t.count !== undefined && <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-xs ${t.id === active.id ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-600"}`}>{t.count}</span>}
+            {t.count !== undefined && <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-xs tabular-nums ${t.id === active.id ? "bg-sky-500 text-slate-900" : "bg-slate-100 text-slate-600"}`}>{t.count}</span>}
           </button>
         ))}
       </div>
@@ -52,7 +39,7 @@ export function Tabs({ tabs, initial }: { tabs: { id: string; label: string; cou
 export function ShipmentLink({ s }: { s: Row }) {
   return (
     <div>
-      <Link href={`/shipments/${s.id}`} className="font-semibold text-sky-700 hover:underline">{s.id}</Link>
+      <Link href={`/shipments/${s.id}`} className="font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline focus-visible:underline">{s.id}</Link>
       <p className="text-xs text-slate-500">{s.seller_name}</p>
     </div>
   );
@@ -65,7 +52,13 @@ export function Stage({ s }: { s: Row }) {
 }
 
 export function Empty({ text }: { text: string }) {
-  return <p className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">{text}</p>;
+  return (
+    <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">
+      <PackageOpen className="h-8 w-8 text-slate-300" aria-hidden />
+      <p>{text}</p>
+      <p className="hand text-xl text-sky-700">all quiet on the dock</p>
+    </div>
+  );
 }
 
 /** Run an API action from a dashboard row, then refresh the page data. */

@@ -1,0 +1,657 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-26T10:46:21+00:00",
+  "title": "Design System: Clear2Ship",
+  "extensions": {
+    "colorMeta": {
+      "safety-orange": {
+        "role": "primary",
+        "displayName": "Safety Orange",
+        "canonical": "#ff5a1f",
+        "tonalRamp": [
+          "#79280d",
+          "#98300c",
+          "#bf3a0b",
+          "#ed4a10",
+          "#ff5a1f",
+          "#ff7a3d",
+          "#ffc8a6",
+          "#fff4ed"
+        ]
+      },
+      "safety-orange-bright": {
+        "role": "primary",
+        "displayName": "Bright Orange",
+        "canonical": "#ff7a3d",
+        "tonalRamp": [
+          "#79280d",
+          "#98300c",
+          "#bf3a0b",
+          "#ed4a10",
+          "#ff5a1f",
+          "#ff7a3d",
+          "#ffc8a6",
+          "#fff4ed"
+        ]
+      },
+      "safety-orange-deep": {
+        "role": "primary",
+        "displayName": "Deep Orange",
+        "canonical": "#ed4a10",
+        "tonalRamp": [
+          "#79280d",
+          "#98300c",
+          "#bf3a0b",
+          "#ed4a10",
+          "#ff5a1f",
+          "#ff7a3d",
+          "#ffc8a6",
+          "#fff4ed"
+        ]
+      },
+      "safety-orange-ink": {
+        "role": "primary",
+        "displayName": "Orange Ink",
+        "canonical": "#bf3a0b",
+        "tonalRamp": [
+          "#79280d",
+          "#98300c",
+          "#bf3a0b",
+          "#ed4a10",
+          "#ff5a1f",
+          "#ff7a3d",
+          "#ffc8a6",
+          "#fff4ed"
+        ]
+      },
+      "safety-orange-wash": {
+        "role": "primary",
+        "displayName": "Orange Wash",
+        "canonical": "#fff4ed",
+        "tonalRamp": [
+          "#79280d",
+          "#98300c",
+          "#bf3a0b",
+          "#ed4a10",
+          "#ff5a1f",
+          "#ff7a3d",
+          "#ffc8a6",
+          "#fff4ed"
+        ]
+      },
+      "safety-orange-tint": {
+        "role": "primary",
+        "displayName": "Orange Tint",
+        "canonical": "#ffc8a6",
+        "tonalRamp": [
+          "#79280d",
+          "#98300c",
+          "#bf3a0b",
+          "#ed4a10",
+          "#ff5a1f",
+          "#ff7a3d",
+          "#ffc8a6",
+          "#fff4ed"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#151412",
+        "tonalRamp": [
+          "#151412",
+          "#282522",
+          "#403c37",
+          "#57524c",
+          "#736d65",
+          "#a0998e",
+          "#cdc6bb",
+          "#f7f5f1"
+        ]
+      },
+      "ink-raised": {
+        "role": "neutral",
+        "displayName": "Ink Raised",
+        "canonical": "#282522",
+        "tonalRamp": [
+          "#151412",
+          "#282522",
+          "#403c37",
+          "#57524c",
+          "#736d65",
+          "#a0998e",
+          "#cdc6bb",
+          "#f7f5f1"
+        ]
+      },
+      "depot-floor": {
+        "role": "neutral",
+        "displayName": "Depot Floor",
+        "canonical": "#f4f2ee",
+        "tonalRamp": [
+          "#151412",
+          "#282522",
+          "#403c37",
+          "#57524c",
+          "#736d65",
+          "#a0998e",
+          "#cdc6bb",
+          "#f7f5f1"
+        ]
+      },
+      "parcel-white": {
+        "role": "neutral",
+        "displayName": "Parcel White",
+        "canonical": "#ffffff",
+        "tonalRamp": [
+          "#151412",
+          "#282522",
+          "#403c37",
+          "#57524c",
+          "#736d65",
+          "#a0998e",
+          "#cdc6bb",
+          "#f7f5f1"
+        ]
+      },
+      "dust": {
+        "role": "neutral",
+        "displayName": "Dust",
+        "canonical": "#f7f5f1",
+        "tonalRamp": [
+          "#151412",
+          "#282522",
+          "#403c37",
+          "#57524c",
+          "#736d65",
+          "#a0998e",
+          "#cdc6bb",
+          "#f7f5f1"
+        ]
+      },
+      "crate-grey": {
+        "role": "neutral",
+        "displayName": "Crate Grey",
+        "canonical": "#efebe5",
+        "tonalRamp": [
+          "#151412",
+          "#282522",
+          "#403c37",
+          "#57524c",
+          "#736d65",
+          "#a0998e",
+          "#cdc6bb",
+          "#f7f5f1"
+        ]
+      },
+      "seam": {
+        "role": "neutral",
+        "displayName": "Seam",
+        "canonical": "#e3ded6",
+        "tonalRamp": [
+          "#151412",
+          "#282522",
+          "#403c37",
+          "#57524c",
+          "#736d65",
+          "#a0998e",
+          "#cdc6bb",
+          "#f7f5f1"
+        ]
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Rule",
+        "canonical": "#cdc6bb",
+        "tonalRamp": [
+          "#151412",
+          "#282522",
+          "#403c37",
+          "#57524c",
+          "#736d65",
+          "#a0998e",
+          "#cdc6bb",
+          "#f7f5f1"
+        ]
+      },
+      "faded": {
+        "role": "neutral",
+        "displayName": "Faded",
+        "canonical": "#a0998e",
+        "tonalRamp": [
+          "#151412",
+          "#282522",
+          "#403c37",
+          "#57524c",
+          "#736d65",
+          "#a0998e",
+          "#cdc6bb",
+          "#f7f5f1"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted",
+        "canonical": "#736d65",
+        "tonalRamp": [
+          "#151412",
+          "#282522",
+          "#403c37",
+          "#57524c",
+          "#736d65",
+          "#a0998e",
+          "#cdc6bb",
+          "#f7f5f1"
+        ]
+      },
+      "graphite": {
+        "role": "neutral",
+        "displayName": "Graphite",
+        "canonical": "#57524c",
+        "tonalRamp": [
+          "#151412",
+          "#282522",
+          "#403c37",
+          "#57524c",
+          "#736d65",
+          "#a0998e",
+          "#cdc6bb",
+          "#f7f5f1"
+        ]
+      },
+      "graphite-strong": {
+        "role": "neutral",
+        "displayName": "Graphite Strong",
+        "canonical": "#403c37",
+        "tonalRamp": [
+          "#151412",
+          "#282522",
+          "#403c37",
+          "#57524c",
+          "#736d65",
+          "#a0998e",
+          "#cdc6bb",
+          "#f7f5f1"
+        ]
+      },
+      "kraft": {
+        "role": "tertiary",
+        "displayName": "Kraft",
+        "canonical": "#d9a46a",
+        "tonalRamp": [
+          "#5e3f1f",
+          "#7f5630",
+          "#9c6b3b",
+          "#b97f45",
+          "#d9a46a",
+          "#ecc493",
+          "#f5dcbc",
+          "#fbefe0"
+        ]
+      },
+      "kraft-dark": {
+        "role": "tertiary",
+        "displayName": "Kraft Shadow Face",
+        "canonical": "#b97f45",
+        "tonalRamp": [
+          "#5e3f1f",
+          "#7f5630",
+          "#9c6b3b",
+          "#b97f45",
+          "#d9a46a",
+          "#ecc493",
+          "#f5dcbc",
+          "#fbefe0"
+        ]
+      },
+      "kraft-light": {
+        "role": "tertiary",
+        "displayName": "Kraft Top Face",
+        "canonical": "#ecc493",
+        "tonalRamp": [
+          "#5e3f1f",
+          "#7f5630",
+          "#9c6b3b",
+          "#b97f45",
+          "#d9a46a",
+          "#ecc493",
+          "#f5dcbc",
+          "#fbefe0"
+        ]
+      },
+      "severity-red": {
+        "role": "semantic",
+        "displayName": "Severity Red",
+        "canonical": "oklch(57.7% 0.245 27.325)",
+        "tonalRamp": [
+          "oklch(39.6% 0.141 25.723)",
+          "oklch(44.4% 0.177 26.899)",
+          "oklch(50.5% 0.213 27.518)",
+          "oklch(57.7% 0.245 27.325)",
+          "oklch(70.4% 0.191 22.216)",
+          "oklch(88.5% 0.062 18.334)",
+          "oklch(93.6% 0.032 17.717)",
+          "oklch(97.1% 0.013 17.38)"
+        ]
+      },
+      "severity-red-text": {
+        "role": "semantic",
+        "displayName": "Severity Red Text",
+        "canonical": "oklch(50.5% 0.213 27.518)",
+        "tonalRamp": [
+          "oklch(39.6% 0.141 25.723)",
+          "oklch(44.4% 0.177 26.899)",
+          "oklch(50.5% 0.213 27.518)",
+          "oklch(57.7% 0.245 27.325)",
+          "oklch(70.4% 0.191 22.216)",
+          "oklch(88.5% 0.062 18.334)",
+          "oklch(93.6% 0.032 17.717)",
+          "oklch(97.1% 0.013 17.38)"
+        ]
+      },
+      "severity-amber": {
+        "role": "semantic",
+        "displayName": "Severity Amber",
+        "canonical": "oklch(82.8% 0.189 84.429)",
+        "tonalRamp": [
+          "oklch(41.4% 0.112 45.904)",
+          "oklch(47.3% 0.137 46.201)",
+          "oklch(55.5% 0.163 48.998)",
+          "oklch(66.6% 0.179 58.318)",
+          "oklch(82.8% 0.189 84.429)",
+          "oklch(92.4% 0.12 95.746)",
+          "oklch(96.2% 0.059 95.617)",
+          "oklch(98.7% 0.022 95.277)"
+        ]
+      },
+      "severity-amber-text": {
+        "role": "semantic",
+        "displayName": "Severity Amber Text",
+        "canonical": "oklch(47.3% 0.137 46.201)",
+        "tonalRamp": [
+          "oklch(41.4% 0.112 45.904)",
+          "oklch(47.3% 0.137 46.201)",
+          "oklch(55.5% 0.163 48.998)",
+          "oklch(66.6% 0.179 58.318)",
+          "oklch(82.8% 0.189 84.429)",
+          "oklch(92.4% 0.12 95.746)",
+          "oklch(96.2% 0.059 95.617)",
+          "oklch(98.7% 0.022 95.277)"
+        ]
+      },
+      "severity-green": {
+        "role": "semantic",
+        "displayName": "Severity Green",
+        "canonical": "oklch(62.7% 0.194 149.214)",
+        "tonalRamp": [
+          "oklch(39.3% 0.095 152.535)",
+          "oklch(44.8% 0.119 151.328)",
+          "oklch(52.7% 0.154 150.069)",
+          "oklch(62.7% 0.194 149.214)",
+          "oklch(79.2% 0.209 151.711)",
+          "oklch(92.5% 0.084 155.995)",
+          "oklch(96.2% 0.044 156.743)",
+          "oklch(98.2% 0.018 155.826)"
+        ]
+      },
+      "severity-green-text": {
+        "role": "semantic",
+        "displayName": "Severity Green Text",
+        "canonical": "oklch(52.7% 0.154 150.069)",
+        "tonalRamp": [
+          "oklch(39.3% 0.095 152.535)",
+          "oklch(44.8% 0.119 151.328)",
+          "oklch(52.7% 0.154 150.069)",
+          "oklch(62.7% 0.194 149.214)",
+          "oklch(79.2% 0.209 151.711)",
+          "oklch(92.5% 0.084 155.995)",
+          "oklch(96.2% 0.044 156.743)",
+          "oklch(98.2% 0.018 155.826)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Display",
+        "purpose": "Every h1: hero headlines (last line Deep Orange) and shipment IDs. Archivo 800 at 125% width."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "List section heads such as 'Your shipments'. 115% width."
+      },
+      "stat": {
+        "displayName": "Stat",
+        "purpose": "Hero stats strip values; tabular figures, 115% width."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Card and Timeline headings."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Tables, forms, panels, buttons and nav at normal width."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Uppercase table header cells, timeline day divider, field-group labels. Never a kicker above a headline."
+      },
+      "hand": {
+        "displayName": "Hand",
+        "purpose": "One Caveat margin note per surface, Orange Ink, rotated about -6deg, aria-hidden."
+      }
+    },
+    "shadows": [
+      {
+        "name": "resting",
+        "value": "0 1px 2px rgb(21 20 18 / 0.05), 0 10px 24px -16px rgb(21 20 18 / 0.22)",
+        "purpose": "Cards, hero banner, tab rail, alerts (--shadow-sm)."
+      },
+      {
+        "name": "floating",
+        "value": "0 2px 4px rgb(21 20 18 / 0.06), 0 18px 36px -18px rgb(21 20 18 / 0.3)",
+        "purpose": "Header pill bar, Next-step panel, button and lift hover (--shadow-md)."
+      },
+      {
+        "name": "overlay",
+        "value": "0 4px 8px rgb(21 20 18 / 0.06), 0 28px 56px -24px rgb(21 20 18 / 0.35)",
+        "purpose": "Milestone toast (--shadow-lg)."
+      }
+    ],
+    "motion": [
+      {
+        "name": "ease-out-expo",
+        "value": "cubic-bezier(0.16, 1, 0.3, 1)",
+        "purpose": "Vans driving in (hero 1.8s, pipeline road 1.1s), once."
+      },
+      {
+        "name": "ease-out-quint",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "Lift hover (180ms), box drop (900ms), stamp (520ms), pop (480ms)."
+      },
+      {
+        "name": "lift",
+        "value": "translateY(-2px) + floating shadow, 180ms",
+        "purpose": "Hover on interactive cards and the hero CTA."
+      },
+      {
+        "name": "play-once",
+        "value": "iteration-count 1-2, then rest",
+        "purpose": "All arrival motion: belt x2, bob x1, ping x2; nothing loops."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "animation/transition 1ms, iteration 1; hero van static; no lift transform",
+        "purpose": "prefers-reduced-motion: reduce."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "sm",
+        "value": "640px"
+      },
+      {
+        "name": "md",
+        "value": "768px"
+      },
+      {
+        "name": "lg",
+        "value": "1024px"
+      },
+      {
+        "name": "container",
+        "value": "72rem"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Ink pill for the default action.",
+      "html": "<button class=\"ds-btn-primary\">Send request</button>",
+      "css": ".ds-btn-primary { font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif; display:inline-flex; align-items:center; gap:6px; background:#151412; color:#fff; border:0; border-radius:9999px; padding:8px 16px; font-size:0.875rem; font-weight:600; cursor:pointer; transition:background 150ms, box-shadow 150ms, transform 150ms; } .ds-btn-primary:hover { background:#282522; box-shadow:0 2px 4px rgb(21 20 18 / 0.06), 0 18px 36px -18px rgb(21 20 18 / 0.3); } .ds-btn-primary:active { transform:translateY(1px); } .ds-btn-primary:focus-visible { outline:2.5px solid #ff5a1f; outline-offset:2px; }"
+    },
+    {
+      "name": "Accent Hero Button",
+      "kind": "button",
+      "refersTo": "button-hero",
+      "description": "The one orange primary CTA, with arrow and lift.",
+      "html": "<a class=\"ds-btn-accent\" href=\"#\">New booking <svg width=\"16\" height=\"16\" viewBox=\"0 0 24 24\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\" aria-hidden=\"true\"><path d=\"M5 12h14\"/><path d=\"m12 5 7 7-7 7\"/></svg></a>",
+      "css": ".ds-btn-accent { font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif; display:inline-flex; align-items:center; gap:6px; background:#ff5a1f; color:#151412; text-decoration:none; border-radius:9999px; padding:10px 20px; font-size:0.875rem; font-weight:600; transition:transform 180ms cubic-bezier(0.22,1,0.36,1), box-shadow 180ms ease, background 150ms; } .ds-btn-accent:hover { background:#ff7a3d; transform:translateY(-2px); box-shadow:0 2px 4px rgb(21 20 18 / 0.06), 0 18px 36px -18px rgb(21 20 18 / 0.3); } .ds-btn-accent:focus-visible { outline:2.5px solid #ff5a1f; outline-offset:2px; }"
+    },
+    {
+      "name": "Secondary Button",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "White pill with a ring that inks on hover.",
+      "html": "<button class=\"ds-btn-secondary\">Upload Excel</button>",
+      "css": ".ds-btn-secondary { font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif; display:inline-flex; align-items:center; gap:6px; background:#fff; color:#151412; border:0; box-shadow:inset 0 0 0 1px #cdc6bb; border-radius:9999px; padding:8px 16px; font-size:0.875rem; font-weight:600; cursor:pointer; transition:box-shadow 150ms; } .ds-btn-secondary:hover { box-shadow:inset 0 0 0 1px #151412; } .ds-btn-secondary:focus-visible { outline:2.5px solid #ff5a1f; outline-offset:2px; }"
+    },
+    {
+      "name": "Floating Pill Nav",
+      "kind": "nav",
+      "refersTo": "nav-pill",
+      "description": "White floating header bar with wordmark and pill links; current page in ink.",
+      "html": "<header class=\"ds-nav\"><a class=\"ds-nav-brand\" href=\"#\">clear2ship<span>.</span></a><nav class=\"ds-nav-links\"><a href=\"#\" aria-current=\"page\">Shipments</a><a href=\"#\">New booking</a><a href=\"#\">Alerts <span class=\"ds-nav-count\">3</span></a></nav></header>",
+      "css": ".ds-nav { font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif; display:flex; align-items:center; gap:24px; background:#fff; border-radius:9999px; padding:10px 16px 10px 24px; box-shadow:0 2px 4px rgb(21 20 18 / 0.06), 0 18px 36px -18px rgb(21 20 18 / 0.3), 0 0 0 1px rgb(227 222 214 / 0.7); } .ds-nav-brand { color:#151412; text-decoration:none; font-size:1.25rem; font-weight:800; letter-spacing:-0.025em; font-stretch:115%; } .ds-nav-brand span { color:#ff5a1f; } .ds-nav-links { display:flex; gap:2px; font-size:0.875rem; } .ds-nav-links a { display:inline-flex; align-items:center; border-radius:9999px; padding:6px 14px; font-weight:500; color:#57524c; text-decoration:none; transition:background 150ms, color 150ms; } .ds-nav-links a:hover { background:#efebe5; color:#151412; } .ds-nav-links a[aria-current=page] { background:#151412; color:#fff; } .ds-nav-links a:focus-visible { outline:2.5px solid #ff5a1f; outline-offset:2px; } .ds-nav-count { margin-left:6px; border-radius:9999px; background:#ff5a1f; color:#151412; padding:2px 6px; font-size:11px; font-weight:700; }"
+    },
+    {
+      "name": "Parcel Card",
+      "kind": "card",
+      "refersTo": "card",
+      "description": "White 1.75rem card with a seam border and resting shadow.",
+      "html": "<section class=\"ds-card\"><h2>Documents</h2><p>Commercial invoice and packing list, checked against the booking.</p></section>",
+      "css": ".ds-card { font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif; background:#fff; border:1px solid rgb(227 222 214 / 0.8); border-radius:1.75rem; padding:24px; box-shadow:0 1px 2px rgb(21 20 18 / 0.05), 0 10px 24px -16px rgb(21 20 18 / 0.22); color:#151412; } .ds-card h2 { margin:0 0 12px; font-size:1.125rem; font-weight:700; letter-spacing:-0.025em; } .ds-card p { margin:0; font-size:0.875rem; color:#57524c; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "White field with orange focus border and ring.",
+      "html": "<input class=\"ds-input\" placeholder=\"Pallets\" />",
+      "css": ".ds-input { font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif; background:#fff; color:#151412; border:1px solid #cdc6bb; border-radius:0.625rem; padding:6px 8px; font-size:0.875rem; caret-color:#ed4a10; } .ds-input:focus { outline:none; border-color:#ff5a1f; box-shadow:0 0 0 1px #ff5a1f; }"
+    },
+    {
+      "name": "Status and Level Badges",
+      "kind": "chip",
+      "refersTo": "status-badge",
+      "description": "Pill status badges with tinted fill and ring; solid square-ish severity tags.",
+      "html": "<span class=\"ds-status\">Docs submitted</span> <span class=\"ds-status ds-status-red\">Action required</span> <span class=\"ds-level ds-level-red\">1 RED</span> <span class=\"ds-level ds-level-amber\">1 AMBER</span>",
+      "css": ".ds-status { font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif; display:inline-flex; white-space:nowrap; border-radius:9999px; padding:2px 10px; font-size:0.75rem; font-weight:500; background:#fff; color:#403c37; box-shadow:inset 0 0 0 1px #cdc6bb; } .ds-status-red { background:oklch(97.1% 0.013 17.38); color:oklch(44.4% 0.177 26.899); box-shadow:inset 0 0 0 1px oklch(80.8% 0.114 19.571); } .ds-level { font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif; display:inline-block; border-radius:0.25rem; padding:2px 6px; font-size:11px; font-weight:700; letter-spacing:0.025em; } .ds-level-red { background:oklch(57.7% 0.245 27.325); color:#fff; } .ds-level-amber { background:oklch(82.8% 0.189 84.429); color:oklch(27.9% 0.077 45.635); }"
+    },
+    {
+      "name": "Pill Tabs",
+      "kind": "nav",
+      "refersTo": "nav-pill-active",
+      "description": "Dashboard tabs in a white rail; active tab ink with an orange count.",
+      "html": "<div class=\"ds-tabs\" role=\"tablist\"><button role=\"tab\" aria-selected=\"true\">To answer <span>4</span></button><button role=\"tab\" aria-selected=\"false\">Booked <span>9</span></button></div>",
+      "css": ".ds-tabs { font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif; display:inline-flex; gap:4px; background:#fff; border-radius:1.4rem; padding:4px; box-shadow:0 1px 2px rgb(21 20 18 / 0.05), 0 10px 24px -16px rgb(21 20 18 / 0.22), 0 0 0 1px rgb(227 222 214 / 0.8); } .ds-tabs button { font:inherit; display:inline-flex; align-items:center; border:0; border-radius:9999px; padding:6px 14px; font-size:0.875rem; font-weight:600; background:transparent; color:#57524c; cursor:pointer; } .ds-tabs button:hover { background:#efebe5; color:#151412; } .ds-tabs button[aria-selected=true] { background:#151412; color:#fff; } .ds-tabs button span { margin-left:6px; border-radius:9999px; padding:2px 6px; font-size:0.75rem; background:#efebe5; color:#57524c; } .ds-tabs button[aria-selected=true] span { background:#ff5a1f; color:#151412; } .ds-tabs button:focus-visible { outline:2.5px solid #ff5a1f; outline-offset:2px; }"
+    },
+    {
+      "name": "Role Hero Banner",
+      "kind": "custom",
+      "refersTo": "hero-banner",
+      "description": "Wide heavy headline with an orange last line, Caveat note, CTA and a live stats strip with one orange act-now count.",
+      "html": "<section class=\"ds-hero\"><div class=\"ds-hero-copy\"><h1>Ship it. Check it.<span>Clear it.</span></h1><p>Every booking checked before customs.</p><p class=\"ds-hero-note\" aria-hidden=\"true\">checked, not guessed!</p></div><dl class=\"ds-hero-stats\"><div><dd>15</dd><dt>In progress</dt></div><div><dd class=\"ds-hot\">5</dd><dt>Need you now</dt></div><div><dd>1</dd><dt>Drafts</dt></div></dl></section>",
+      "css": ".ds-hero { font-family: var(--font-archivo), ui-sans-serif, system-ui, sans-serif; background:#fff; border:1px solid rgb(227 222 214 / 0.8); border-radius:2rem; overflow:hidden; box-shadow:0 1px 2px rgb(21 20 18 / 0.05), 0 10px 24px -16px rgb(21 20 18 / 0.22); color:#151412; } .ds-hero-copy { position:relative; padding:40px 40px 16px; } .ds-hero h1 { margin:0; font-size:3.6rem; font-weight:800; font-stretch:125%; letter-spacing:-0.025em; line-height:1.02; } .ds-hero h1 span { display:block; color:#ed4a10; } .ds-hero-copy p { margin:16px 0 0; max-width:28rem; color:#57524c; } .ds-hero-note { position:absolute; top:12px; right:32px; font-family:var(--font-caveat), 'Bradley Hand', cursive; font-weight:600; font-size:1.7rem; line-height:1; color:#bf3a0b !important; transform:rotate(-6deg); } .ds-hero-stats { display:flex; margin:0; border-top:1px solid rgb(227 222 214 / 0.8); } .ds-hero-stats div { flex:1; padding:16px 32px; } .ds-hero-stats div + div { border-left:1px solid rgb(227 222 214 / 0.8); } .ds-hero-stats dd { margin:0; font-size:1.875rem; font-weight:800; font-stretch:115%; font-variant-numeric:tabular-nums; } .ds-hero-stats dd.ds-hot { color:#ed4a10; } .ds-hero-stats dt { margin-top:2px; font-size:0.75rem; font-weight:500; color:#736d65; }"
+    },
+    {
+      "name": "Pipeline Road",
+      "kind": "custom",
+      "refersTo": "",
+      "description": "Six stops on an ink road with orange lane dashes; done ticked, current orange.",
+      "html": "<div class=\"ds-road\" aria-label=\"Stage 4 of 6: Customs\"><div class=\"ds-road-asphalt\"><i></i></div><span class=\"ds-stop ds-done\" style=\"left:0%\"></span><span class=\"ds-stop ds-done\" style=\"left:20%\"></span><span class=\"ds-stop ds-done\" style=\"left:40%\"></span><span class=\"ds-stop ds-current\" style=\"left:60%\"></span><span class=\"ds-stop\" style=\"left:80%\"></span><span class=\"ds-stop\" style=\"left:100%\"></span></div>",
+      "css": ".ds-road { position:relative; height:24px; width:420px; margin:0 12px; } .ds-road-asphalt { position:absolute; left:-9px; right:-9px; top:6px; height:12px; border-radius:9999px; background:#282522; } .ds-road-asphalt i { position:absolute; left:12px; right:12px; top:5px; height:2px; background:repeating-linear-gradient(90deg,#ff5a1f 0 8px,transparent 8px 16px); } .ds-stop { position:absolute; top:3px; width:18px; height:18px; margin-left:-9px; box-sizing:border-box; border-radius:9999px; border:2px solid #151412; background:#e3ded6; } .ds-stop.ds-done { background:#fff; } .ds-stop.ds-current { background:#ff5a1f; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Dispatch Depot",
+    "overview": "Clear2Ship looks like a working parcel depot read from the gantry: a warm grey concrete floor, white parcel-card surfaces, black ink for everything that is text or structure, and one hot safety orange that means \"move this now\" or \"you are here\". The world is drawn, not rendered: vans, cartons, pallets, a conveyor and a small depot sit in a clean isometric line with a single ink stroke, filled in ink, white, kraft and orange.\n\nIt is an operating tool first. The hero banner on each role's home page carries the personality (a wide, heavy freight-signage headline with an orange final line, a handwritten margin note, an isometric scene, a strip of live counts); everything below it stays calm and scannable: pill tabs, white cards, plain tables, small status pills. Motion is playful but finite: scenes and milestones play once and then rest.\n\nThe system refuses the grey SaaS admin template: no blue links, no row of identical icon stat cards, no rendered 3D. RED / AMBER / GREEN severity keeps its own untouched palette so it is always readable against the orange.",
+    "keyCharacteristics": [
+      "Warm depot-floor ground (`depot-floor`) with white cards; ink, not grey-blue, for text and active states.",
+      "One accent, safety orange, for action, position, selection and focus; never for severity.",
+      "Pills everywhere you click: nav, tabs, buttons, role switcher, filter chips, status badges.",
+      "Archivo throughout; its 125% wide, 800 weight cut only for page titles, 115% for big numbers and the wordmark.",
+      "Caveat handwriting as a single decorative margin note.",
+      "Isometric line-drawn illustration kit in ink + white + kraft + orange.",
+      "Motion plays once on arrival, then rests; reduced motion collapses it."
+    ],
+    "rules": [
+      {
+        "name": "The Move-This-Now Rule",
+        "body": "Orange means one of: the action to take, where the shipment is, what is selected or focused, or what is unread. On a role home page the hero carries exactly one orange headline line, one orange primary CTA and one orange act-now count. Orange is never body copy and never a severity.",
+        "section": "colors"
+      },
+      {
+        "name": "The Severity Stands Alone Rule",
+        "body": "RED / AMBER / GREEN keep their own hues and fills; orange never stands in for amber or red, and a stuck pipeline stop turns red or amber instead of orange.",
+        "section": "colors"
+      },
+      {
+        "name": "The Ink Link Rule",
+        "body": "Links are ink, semibold, with no underline at rest; on hover and keyboard focus they take a 2px safety-orange underline offset 4px. No blue, no orange link text.",
+        "section": "colors"
+      },
+      {
+        "name": "The Freight Signage Rule",
+        "body": "Wide cuts are for titles and big numbers only (125% for `h1`, 115% for section heads, stats and the wordmark). Buttons, nav, tables and forms stay at normal width.",
+        "section": "typography"
+      },
+      {
+        "name": "The Margin Note Rule",
+        "body": "One Caveat note per surface, short, lowercase, in Orange Ink, decorative and `aria-hidden`. It never carries information the user needs.",
+        "section": "typography"
+      },
+      {
+        "name": "The Tabular Rule",
+        "body": "Tables, stats and `time` elements use tabular figures so counts and dates line up.",
+        "section": "typography"
+      },
+      {
+        "name": "The Soft Lift Rule",
+        "body": "Interactive cards and the hero CTA rise 2px and step from Resting to Floating on hover (180ms, cubic-bezier(0.22, 1, 0.36, 1)); with reduced motion they do not move.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** set pages on Depot Floor with white 1.75rem cards and the Resting shadow.",
+      "**Do** give each role home page one orange headline line, one orange primary CTA and one orange act-now count, and no more.",
+      "**Do** make every clickable control a pill; current state is solid Ink with white text.",
+      "**Do** keep links ink with an orange 2px underline on hover and focus.",
+      "**Do** draw illustrations from the isometric kit (ink stroke, ink/white/kraft/orange fills); keep them decorative and `aria-hidden`.",
+      "**Do** let motion play once and rest, and honour reduced motion.",
+      "**Do** show only live counts in stats."
+    ],
+    "donts": [
+      "**Don't** use orange for severity, body text or link text, or to decorate a whole surface.",
+      "**Don't** restyle RED / AMBER / GREEN; they keep Tailwind's stock values.",
+      "**Don't** use blue links or a grey SaaS admin palette.",
+      "**Don't** use the 125% wide cut below headline level (buttons, tables, nav, forms).",
+      "**Don't** use hard offset shadows; depth is soft and ink-tinted.",
+      "**Don't** use rendered 3D or photographic imagery; the world is drawn.",
+      "**Don't** loop ambient animation on working screens.",
+      "**Don't** place uppercase labels above headlines as kickers; the label style is for table heads and field groups."
+    ]
+  }
+}

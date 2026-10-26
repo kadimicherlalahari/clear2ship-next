@@ -1,8 +1,10 @@
 "use client";
 import Link from "next/link";
 import { useState } from "react";
+import { CustomsScene } from "../illustrations/scenes";
+import { RoleHero } from "../RoleHero";
 import { Button, postJson, StatusBadge } from "../ui";
-import { dayName, daysSince, dmy, Empty, inputCls, kg, Kpis, RowMessage, ShipmentLink, Stage, Tabs, useRowAction, type Row } from "./common";
+import { dayName, daysSince, dmy, Empty, inputCls, kg, RowMessage, ShipmentLink, Stage, Tabs, useRowAction, type Row } from "./common";
 
 type Data = { ready: Row[]; awaiting: Row[]; exceptions: Row[]; done: Row[]; coming: Row[]; toConfirm: Row[] };
 type RunProps = { run: ReturnType<typeof useRowAction>["run"]; busy: string | null; msg: ReturnType<typeof useRowAction>["msg"] };
@@ -44,17 +46,21 @@ export function ForwarderDashboard({ data }: { data: Data }) {
 
   return (
     <div className="space-y-5">
-      <div>
-        <h1 className="text-2xl font-semibold">Freight forwarder: customs</h1>
-        <p className="text-sm text-slate-600">Shipments the warehouse has accepted come to you to declare. Follow them through customs, deal with holds and rejections, then mark them delivered.</p>
-      </div>
-      <Kpis items={[
-        { label: "Ready to declare", value: data.ready.length, tone: "sky" },
-        { label: "With customs", value: data.awaiting.length },
-        { label: "On hold / rejected", value: data.exceptions.length, tone: "red" },
-        { label: "Seller replied, ready to resubmit", value: replied.length, tone: "amber" },
-        { label: "Customs emails to confirm", value: data.toConfirm.length, tone: "amber" },
-      ]} />
+      <RoleHero
+        lead="Declare it."
+        accent="Clear it."
+        sentence="Shipments the warehouse has accepted come to you: declare them, follow them through customs, and sort out holds and rejections."
+        note="every reason, word for word"
+        noteAt="top-right"
+        scene={<CustomsScene className="h-auto w-full" />}
+        stats={[
+          { label: "Ready to declare", value: data.ready.length, tone: "orange" },
+          { label: "With customs", value: data.awaiting.length },
+          { label: "On hold / rejected", value: data.exceptions.length, tone: "red" },
+          { label: "Seller replied", value: replied.length },
+          { label: "Emails to confirm", value: data.toConfirm.length },
+        ]}
+      />
 
       <Tabs initial={data.exceptions.length && !data.ready.length ? "exceptions" : "ready"} tabs={[
         {
@@ -85,7 +91,7 @@ export function ForwarderDashboard({ data }: { data: Data }) {
                     <td className="px-3 py-2.5">{s.declaration_ref}<br /><span className="text-xs text-slate-500">{dmy(s.declaration_date)}</span></td>
                     <td className={`px-3 py-2.5 font-medium ${days > 3 ? "text-amber-700" : ""}`}>{days} day{days === 1 ? "" : "s"}{days > 3 ? " · chase customs?" : ""}</td>
                     <td className="px-3 py-2.5">{s.unconfirmed ? <span className="font-medium text-amber-800">{s.unconfirmed} to confirm</span> : <span className="text-slate-500">None yet</span>}</td>
-                    <td className="px-3 py-2.5"><Link href={`/shipments/${s.id}#customs`} className="text-sm font-medium text-sky-700 hover:underline">Paste a customs email →</Link></td>
+                    <td className="px-3 py-2.5"><Link href={`/shipments/${s.id}#customs`} className="text-sm font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline focus-visible:underline">Paste a customs email →</Link></td>
                   </tr>
                 );
               })}
@@ -110,12 +116,12 @@ export function ForwarderDashboard({ data }: { data: Data }) {
                       <RefDate s={s} label="Record resubmission" action={resubmit(s.id)} done="Resubmission recorded. The seller has been told." {...r} />
                     </div>
                   ) : (
-                    <p className="mt-2 text-sm text-amber-800">Waiting for the seller for {daysSince(s.hold_since ?? s.updated_at)} day{daysSince(s.hold_since ?? s.updated_at) === 1 ? "" : "s"}. <Link className="text-sky-700 hover:underline" href={`/shipments/${s.id}`}>Open</Link></p>
+                    <p className="mt-2 text-sm text-amber-800">Waiting for the seller for {daysSince(s.hold_since ?? s.updated_at)} day{daysSince(s.hold_since ?? s.updated_at) === 1 ? "" : "s"}. <Link className="font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline focus-visible:underline" href={`/shipments/${s.id}`}>Open</Link></p>
                   )}
                 </li>
               ))}
             </ul>
-          ) : <Empty text="No holds or rejections. 🎉" />,
+          ) : <Empty text="No holds or rejections." />,
         },
         {
           id: "confirm", label: "Emails to confirm", count: data.toConfirm.length,
@@ -123,11 +129,11 @@ export function ForwarderDashboard({ data }: { data: Data }) {
             <Table head={["Shipment", "Suggested status", "Reason found", "Pasted", ""]}>
               {data.toConfirm.map((m) => (
                 <tr key={m.id} className="align-top">
-                  <td className="px-3 py-2.5"><Link href={`/shipments/${m.shipment_id}`} className="font-semibold text-sky-700 hover:underline">{m.shipment_id}</Link><p className="text-xs text-slate-500">{m.seller_name}</p></td>
+                  <td className="px-3 py-2.5"><Link href={`/shipments/${m.shipment_id}`} className="font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline focus-visible:underline">{m.shipment_id}</Link><p className="text-xs text-slate-500">{m.seller_name}</p></td>
                   <td className="px-3 py-2.5">{m.suggested_status ?? "Unclear"}</td>
                   <td className="px-3 py-2.5 text-xs italic">{m.suggested_reason ?? "–"}</td>
                   <td className="px-3 py-2.5 text-xs">{dmy(m.created_at)}</td>
-                  <td className="px-3 py-2.5"><Link href={`/shipments/${m.shipment_id}#customs`} className="text-sm font-medium text-sky-700 hover:underline">Check and confirm →</Link></td>
+                  <td className="px-3 py-2.5"><Link href={`/shipments/${m.shipment_id}#customs`} className="text-sm font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline focus-visible:underline">Check and confirm →</Link></td>
                 </tr>
               ))}
             </Table>

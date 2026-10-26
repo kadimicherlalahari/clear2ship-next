@@ -1,4 +1,5 @@
 "use client";
+import { Check, Info, TriangleAlert, X, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -7,15 +8,18 @@ import { Button, Card, formatTime, postJson, StatusBadge, timeAgo } from "./ui";
 type Row = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 type Action = { label: string; action: string; params: { anchor?: string } };
 
-const SEVERITY: Record<string, { icon: string; ring: string; dot: string }> = {
-  success: { icon: "✓", ring: "border-green-200", dot: "bg-green-600" },
-  info: { icon: "i", ring: "border-sky-200", dot: "bg-sky-600" },
-  warning: { icon: "!", ring: "border-amber-300", dot: "bg-amber-500" },
-  error: { icon: "✕", ring: "border-red-300", dot: "bg-red-600" },
+const SEVERITY: Record<string, { Icon: LucideIcon; ring: string; dot: string }> = {
+  success: { Icon: Check, ring: "border-green-200", dot: "bg-green-600 text-white" },
+  info: { Icon: Info, ring: "border-slate-200", dot: "bg-slate-900 text-white" },
+  warning: { Icon: TriangleAlert, ring: "border-amber-300", dot: "bg-amber-400 text-amber-950" },
+  error: { Icon: X, ring: "border-red-300", dot: "bg-red-600 text-white" },
 };
 const TOPIC: Record<string, string> = { booking: "Booking", carrier: "Carrier", slot: "Delivery slot", goods: "Warehouse", customs: "Customs", problems: "Problems" };
 const CHANNEL_STYLE: Record<string, string> = {
-  sent: "bg-green-50 text-green-800", outbox: "bg-slate-100 text-slate-600", not_connected: "bg-slate-100 text-slate-500", failed: "bg-red-50 text-red-700",
+  sent: "bg-green-50 text-green-800",
+  outbox: "bg-slate-100 text-slate-700",
+  not_connected: "bg-slate-100 text-slate-700",
+  failed: "bg-red-50 text-red-800",
 };
 const CHANNEL_TEXT: Record<string, string> = { sent: "sent", outbox: "in email log", not_connected: "not connected", failed: "failed" };
 
@@ -57,9 +61,9 @@ function AlertCard({ a, onRead }: { a: Row; onRead: (id: number) => void }) {
   };
 
   return (
-    <li className={`relative rounded-xl border bg-white p-4 shadow-sm ${sev.ring} ${a.read_at ? "" : "ring-1 ring-sky-300"}`} onMouseEnter={() => !a.read_at && onRead(a.id)}>
+    <li className={`lift relative rounded-2xl border bg-white p-4 shadow-sm sm:p-5 ${sev.ring} ${a.read_at ? "" : "ring-2 ring-sky-300"}`} onMouseEnter={() => !a.read_at && onRead(a.id)}>
       <div className="flex gap-3">
-        <span className={`mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white ${sev.dot}`} aria-hidden>{sev.icon}</span>
+        <span className={`mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${sev.dot}`} aria-hidden><sev.Icon className="h-4 w-4" strokeWidth={2.5} /></span>
         <div className="min-w-0 flex-1 space-y-1.5">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <p className="font-semibold text-slate-900">
@@ -69,7 +73,7 @@ function AlertCard({ a, onRead }: { a: Row; onRead: (id: number) => void }) {
             <time className="text-xs text-slate-500" title={formatTime(a.created_at)}>{timeAgo(a.created_at)}</time>
           </div>
           <p className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
-            <Link href={`/shipments/${a.shipment_id}`} className="font-medium text-sky-700 hover:underline">{a.shipment_id}</Link>
+            <Link href={`/shipments/${a.shipment_id}`} className="font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline focus-visible:underline">{a.shipment_id}</Link>
             <span>{a.seller_name}</span>
             <span>· {TOPIC[a.topic] ?? a.topic}</span>
             <StatusBadge status={a.shipment_status} />
@@ -77,7 +81,7 @@ function AlertCard({ a, onRead }: { a: Row; onRead: (id: number) => void }) {
           <ul className="space-y-0.5 text-sm text-slate-700">{(a.lines as string[]).map((l, i) => <li key={i}>{l}</li>)}</ul>
           {actions.length > 0 && (
             a.resolved_at ? (
-              <p className="text-xs font-medium text-green-700">✓ Done {timeAgo(a.resolved_at)}</p>
+              <p className="inline-flex items-center gap-1 text-xs font-medium text-green-700"><Check className="h-3.5 w-3.5" aria-hidden /> Done {timeAgo(a.resolved_at)}</p>
             ) : (
               <div className="flex flex-wrap gap-2 pt-1">
                 {actions.map((x, i) => (
@@ -158,7 +162,7 @@ export function AlertsView({ alerts, sellers, telegramConnected, emailConnected 
     <div className="space-y-5">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Alerts</h1>
+          <h1 className="text-4xl sm:text-5xl">Your <span className="text-sky-600">alerts.</span></h1>
           <p className="text-sm text-slate-600">Every update about your shipments: carrier, delivery slot, warehouse and customs. Each one is also emailed and sent on Telegram. Act on it right here.</p>
         </div>
         <Button variant="secondary" disabled={!unread} onClick={async () => { await postJson("/api/alerts", { all: true, seller: seller || undefined }); router.refresh(); }}>Mark all read</Button>
