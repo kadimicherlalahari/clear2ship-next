@@ -8,7 +8,7 @@ import { api, Button, ErrorNote, postJson } from "./ui";
 type Msg = { role: "seller" | "app"; content: string };
 type Reply = { shipmentId: string; reply: string; fallback?: boolean; complete: boolean; result?: CheckLike };
 
-export function Chat({ shipmentId: initialId = null, initialMessages = [], onReply }: { shipmentId?: string | null; initialMessages?: Msg[]; onReply?: () => void }) {
+export function Chat({ shipmentId: initialId = null, initialMessages = [], onReply, side = false }: { shipmentId?: string | null; initialMessages?: Msg[]; onReply?: () => void; side?: boolean }) {
   const [shipmentId, setShipmentId] = useState<string | null>(initialId);
   const [messages, setMessages] = useState<Msg[]>(initialMessages.length ? initialMessages : [{
     role: "app",
@@ -51,7 +51,7 @@ export function Chat({ shipmentId: initialId = null, initialMessages = [], onRep
 
   return (
     <div className="space-y-4">
-      <div ref={box} className="max-h-[60vh] space-y-3 overflow-y-auto rounded-xl border border-slate-200 bg-white p-4">
+      <div ref={box} className={`${side ? "max-h-[50vh] min-h-40" : "max-h-[60vh]"} space-y-3 overflow-y-auto rounded-xl border border-slate-200 bg-white p-4`}>
         {messages.map((m, i) => (
           <div key={i} className={`flex ${m.role === "seller" ? "justify-end" : "justify-start"}`}>
             <div className={`max-w-[85%] whitespace-pre-wrap rounded-2xl px-3.5 py-2 text-sm ${m.role === "seller" ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-900"}`}>

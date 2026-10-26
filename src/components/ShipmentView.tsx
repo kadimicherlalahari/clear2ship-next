@@ -74,15 +74,16 @@ export function ShipmentView({ id }: { id: string }) {
   const booked = s.carrier_status === "confirmed";
 
   // Chat for this booking: change details, or ask about it.
+  // The seller's chat sits beside the checks (stacked on phones), so a fix can be typed or asked about right there.
   const chatFirst = !s.submitted_at && b.check.inputBlocked;
   const chatCard = (
-    <Card title={chatFirst ? "Or carry on in chat" : "Chat about this booking"}>
+    <Card title={chatFirst ? "Or carry on in chat" : "Chat about this booking"} className="lg:sticky lg:top-28">
       {isSeller ? (
         <>
           <p className="mb-3 text-sm text-slate-600">{chatFirst
-            ? "Fill in the missing details above, or tell me them here, e.g. \"Rotterdam, warehouse, ready 21-11-2026\"."
+            ? "Fill in the missing details, or tell me them here, e.g. \"Rotterdam, warehouse, ready 21-11-2026\"."
             : <>Change a detail (e.g. &quot;make it 4 pallets&quot;) or ask a question (e.g. &quot;when is the collection?&quot;).</>}</p>
-          <Chat shipmentId={id} initialMessages={b.chat} onReply={load} />
+          <Chat shipmentId={id} initialMessages={b.chat} onReply={load} side />
         </>
       ) : <InfoNote>The chat is for the seller. Switch role to Seller to use it.</InfoNote>}
     </Card>
@@ -129,16 +130,14 @@ export function ShipmentView({ id }: { id: string }) {
 
       {moment && <MomentToast kind={moment} onDone={clearMoment} />}
 
-      {/* 2. Checks, each with its fix right below it */}
-      <ChecksPanel check={b.check} shipment={s} items={b.items} canFix={isSeller && !locked} act={act} busy={busy} showDisclaimer={!booked} />
-
-      {/* A draft that still has missing details (e.g. a chat the seller left half-way): chat right under the gaps. */}
-      {chatFirst && chatCard}
+      {/* 2. Checks, each with its fix right below it, and the seller's chat alongside */}
+      <div className={isSeller ? "grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,26rem)]" : ""}>
+        <ChecksPanel check={b.check} shipment={s} items={b.items} canFix={isSeller && !locked} act={act} busy={busy} showDisclaimer={!booked} />
+        {isSeller && chatCard}
+      </div>
 
       {/* 3. Carrier recommendations: ranked, selectable, regenerate by priority */}
       <CarrierPanel carrier={b.check.carrier} shipment={s} canChoose={isSeller && !locked} act={act} busy={busy} />
-
-      {!chatFirst && chatCard}
 
       {/* 4. Booking overview (key facts + everything the documents need) */}
       <BookingOverview shipment={s} items={b.items}
