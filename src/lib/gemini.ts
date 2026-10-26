@@ -33,7 +33,9 @@ async function generateJson<T>(contents: Parameters<GoogleGenAI["models"]["gener
     } catch (e) {
       if (e instanceof GeminiUnavailable) throw e;
       if (i < attempts && transient(e)) { await new Promise((r) => setTimeout(r, 800 * i)); continue; }
-      throw new GeminiUnavailable(e instanceof Error ? e.message.slice(0, 300) : String(e));
+      const reason = e instanceof Error ? e.message.slice(0, 300) : String(e);
+      console.error(`Gemini (${model()}) failed after ${i} tr${i === 1 ? "y" : "ies"}: ${reason}`);
+      throw new GeminiUnavailable(reason);
     }
   }
 }
