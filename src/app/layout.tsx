@@ -3,6 +3,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { NavLinks } from "@/components/NavLinks";
 import { RoleSwitcher } from "@/components/RoleSwitcher";
+import { unreadCount } from "@/lib/alerts";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -14,6 +15,7 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   // The menu depends on the role (read on the server, so it's right on the first paint).
   const role = (await cookies()).get("c2s_role")?.value ?? "seller";
+  const unread = role === "seller" || role === "admin" ? await unreadCount().catch(() => 0) : 0;
   return (
     <html lang="en">
       <body className="min-h-screen bg-slate-50 text-slate-900 antialiased">
@@ -23,7 +25,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
               <Link href="/" className="text-lg font-bold tracking-tight">
                 Clear<span className="text-sky-400">2</span>Ship
               </Link>
-              <NavLinks role={role} />
+              <NavLinks role={role} unread={unread} />
             </div>
             <RoleSwitcher />
           </div>

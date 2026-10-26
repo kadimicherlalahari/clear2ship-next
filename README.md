@@ -12,7 +12,10 @@ npm run dev -- -p 3100        # http://localhost:3100
 ```
 
 - **Database:** with `DATABASE_URL` empty, the app uses a local Postgres (PGlite) stored in `.data/pglite`. It is created automatically, with the 3 sample shipments loaded by `npm run db:seed`. Set `DATABASE_URL` to a Neon connection string and the same code and schema run on Neon (`npm run db:migrate && npm run db:seed`).
-- **Email:** with `RESEND_API_KEY` empty, emails are saved and shown on the **Outbox** page instead of being sent.
+- **Email:** with `RESEND_API_KEY` empty, emails are saved to the admin **Email log** instead of being sent.
+- **Telegram:** create a bot with @BotFather and set `TELEGRAM_BOT_TOKEN`. Each seller adds their chat ID on the Alerts page (they can get it from @userinfobot, then start a chat with your bot). Without these, alerts show "Telegram: not connected".
+- **Action links:** `ACTION_LINK_SECRET` (any long random string) signs the buttons in alert emails and Telegram messages.
+- **Neon:** after pulling changes that touch `db/schema.sql`, run `npm run db:migrate` (the local database applies it automatically).
 - **Gemini:** needs `GEMINI_API_KEY`. If Gemini can't be reached, the chat switches to a step-by-step form and documents can be typed in by hand.
 - PGlite allows one process at a time: stop the dev server before running `npm run db:seed` or the scripts below, or use **Admin → Reset sample data** in the app.
 
@@ -50,7 +53,12 @@ Each shipment page starts with a compact pipeline (Draft → Collection & slot �
 7. **Warehouse goods check:** accept or flag a mismatch. Ready for customs = collection and slot confirmed, goods accepted, no RED problems.
 8. **Customs:** the forwarder records the declaration they submitted. A pasted customs email gets a suggested status, a person confirms it, and On hold / Rejected emails the seller the exact reason.
 9. **Chat on each booking:** change details, or ask a question. Answers come only from the shipment's own facts.
-10. **Alerts:** problems email the seller after submit. The 24 h reminder and 48 h admin alert also cover complete drafts (e.g. a missing packing list). Collection and slot requests go to `CARRIER_EMAIL` / `WAREHOUSE_EMAIL`, and confirmations and declines to the seller.
+10. **Seller alerts:** every update for a seller is an alert. It's shown on the **Alerts** page (with an unread count in the menu), emailed, and sent on Telegram. Alerts that need something offer the action right there. In email and Telegram these are signed links that open a confirm page; nothing happens until the seller confirms, and a link can't be reused once done. The four main cases:
+    - **Carrier:** confirmed, or declined. A decline offers the next-best carriers ("Book Carrier B: £400, 3 days…"); one click chooses it and sends the new collection request. A carrier that declined can't be chosen again.
+    - **Delivery slot:** booked, declined (send a new request), or a different time proposed (accept, or ask for another time).
+    - **Warehouse:** goods accepted, or rejected with the warehouse's reason and what to do next.
+    - **Customs:** on hold or rejected, with the exact reason, what customs asks for, and a reply button. Cleared and delivered are sent too.
+11. **Reminders:** problems alert the seller after submit. The 24 h reminder and 48 h admin alert also cover complete drafts (e.g. a missing packing list). Collection and slot requests go to `CARRIER_EMAIL` / `WAREHOUSE_EMAIL`, and confirmations and declines to the seller.
 
 The app still never submits to customs or says a shipment is "compliant".
 

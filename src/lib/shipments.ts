@@ -6,7 +6,7 @@ import { fmt } from "./rules/format";
 import { parseBooking, toDisplayDate } from "./rules/parse";
 import { checkBooking, ukToday } from "./rules/rules";
 import type { CheckResult, DocInfo, Issue, RawBooking, RawItem } from "./rules/types";
-import { sendCarrierRequestEmail, sendIssuesEmail } from "./email";
+import { resolveAlerts, sendCarrierRequestEmail, sendIssuesEmail } from "./email";
 import { missingDetails } from "./docDetails";
 
 export type Actor = { role: "seller" | "warehouse" | "forwarder" | "carrier" | "admin" | "system"; name?: string | null };
@@ -50,7 +50,7 @@ export async function nextShipmentId(): Promise<string> {
 export async function getShipment(id: string) {
   const [s] = await q("SELECT * FROM shipments WHERE id = $1", [id]);
   if (!s) return null;
-  const [items, documents, issues, events, customs, emails, replies] = await Promise.all([
+  const [items, documents, issues, events, customs, emails, replies, alerts] = await Promise.all([
     q("SELECT * FROM items WHERE shipment_id = $1 ORDER BY position, id", [id]),
     q("SELECT id, kind, filename, mime_type, size_bytes, extracted, confirmed_at, uploaded_at FROM documents WHERE shipment_id = $1 ORDER BY uploaded_at", [id]),
     q("SELECT * FROM issues WHERE shipment_id = $1 ORDER BY status, first_seen_at, id", [id]),
@@ -59,8 +59,9 @@ export async function getShipment(id: string) {
     q("SELECT id, kind, to_address, subject, body, provider_id, error, sent_at FROM emails WHERE shipment_id = $1 ORDER BY sent_at DESC", [id]),
     q(`SELECT r.*, d.filename FROM customs_replies r LEFT JOIN documents d ON d.id = r.document_id
         WHERE r.shipment_id = $1 ORDER BY r.created_at DESC`, [id]),
+    q("SELECT id, title, severity, lines, actions, channels, resolved_at, created_at FROM alerts WHERE shipment_id = $1 ORDER BY created_at DESC", [id]),
   ]);
-  return { shipment: s, items, documents: documents.filter((d) => d.kind !== "supporting"), supporting: documents.filter((d) => d.kind === "supporting"), issues, events, customs, emails, replies };
+  return { shipment: s, items, documents: documents.filter((d) => d.kind !== "supporting"), supporting: documents.filter((d) => d.kind === "supporting"), issues, events, customs, emails, replies, alerts };
 }
 export type ShipmentBundle = NonNullable<Awaited<ReturnType<typeof getShipment>>>;
 
@@ -386,12 +387,14 @@ export async function recheck(id: string, actor: Actor = { role: "system" }, opt
     await logEvent(id, sys, `${resolved.length} problem${resolved.length === 1 ? "" : "s"} fixed: ${resolved.map((i) => `${i.code} ${i.message}`).join(" | ")}`);
   }
   if (status !== s.status) await logEvent(id, sys, `Status changed from ${s.status} to ${status}`);
+  if (!check.allIssues.length) await resolveAlerts(id, "problems");
 
   // Problem alert to the seller when new problems appear after submit. Drafts (the seller is on screen)
   // get the 24-hour reminder instead, once the booking details are complete.
   // "Please confirm the fields you just uploaded" is a step on screen, not something to email about.
   // Declines already have their own email to the seller.
-  const alertable = (list: Issue[]) => list.filter((i) => !i.key.endsWith(":confirm") && !i.key.endsWith(":declined"));
+  // (Declines and a warehouse rejection have their own alert, with the reason and next steps.)
+  const alertable = (list: Issue[]) => list.filter((i) => !i.key.endsWith(":confirm") && !i.key.endsWith(":declined") && !i.key.startsWith("WAREHOUSE:"));
   if (opts.email !== false && status !== "Draft" && alertable(added).length) {
     const fresh = await getShipment(id);
     await sendIssuesEmail(fresh!, "issues");

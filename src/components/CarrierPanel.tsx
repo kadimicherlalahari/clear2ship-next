@@ -97,6 +97,7 @@ export function CarrierPanel({ carrier, shipment, canChoose, act, busy }: {
         <ul className="space-y-2" role="radiogroup" aria-label="Choose a carrier">
           {ranked.map((c, i) => {
             const on = shipment.selected_carrier === c.name;
+            const declined = ((shipment.declined_carriers ?? []) as string[]).includes(c.name);
             const tags = [
               c.price === best.price && "Cheapest",
               c.transitDays === best.days && "Fastest",
@@ -104,8 +105,8 @@ export function CarrierPanel({ carrier, shipment, canChoose, act, busy }: {
             ].filter(Boolean) as string[];
             return (
               <li key={c.name}>
-                <button role="radio" aria-checked={on} disabled={!selectable && !on} onClick={() => choose(c.name)}
-                  className={`flex w-full flex-wrap items-center gap-3 rounded-xl border p-3 text-left transition ${on ? "border-sky-500 bg-sky-50 ring-2 ring-sky-500" : "border-slate-200 bg-white hover:border-slate-400 hover:shadow-sm"} ${!selectable ? "cursor-default" : ""}`}>
+                <button role="radio" aria-checked={on} disabled={(!selectable && !on) || declined} onClick={() => choose(c.name)}
+                  className={`flex w-full flex-wrap items-center gap-3 rounded-xl border p-3 text-left transition ${declined ? "border-slate-200 bg-slate-50 opacity-60" : on ? "border-sky-500 bg-sky-50 ring-2 ring-sky-500" : "border-slate-200 bg-white hover:border-slate-400 hover:shadow-sm"} ${!selectable || declined ? "cursor-default" : ""}`}>
                   <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 ${on ? "border-sky-600 bg-sky-600" : "border-slate-300"}`}>
                     {on && <span className="h-2 w-2 rounded-full bg-white" />}
                   </span>
@@ -114,7 +115,8 @@ export function CarrierPanel({ carrier, shipment, canChoose, act, busy }: {
                     <span className="flex flex-wrap items-center gap-1.5">
                       <span className="font-semibold">{c.name}</span>
                       <span className="text-sm text-slate-500">{c.service}</span>
-                      {i === 0 && <span className="rounded-full bg-green-600 px-2 py-0.5 text-[11px] font-semibold text-white">Recommended</span>}
+                      {declined && <span className="rounded-full bg-red-100 px-2 py-0.5 text-[11px] font-semibold text-red-800">Declined this collection</span>}
+                      {i === 0 && !declined && <span className="rounded-full bg-green-600 px-2 py-0.5 text-[11px] font-semibold text-white">Recommended</span>}
                       {tags.map((t) => <span key={t} className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">{t}</span>)}
                     </span>
                     <Delta c={c} top={top} />

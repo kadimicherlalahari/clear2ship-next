@@ -204,7 +204,7 @@ export async function seedSamples() {
       );
     }
 
-    await seedTimeline(s, { carrier, pickupIso, declared, appointment, customsStatus });
+    await seedTimeline(s, { carrier, pickupIso, declared, appointment, customsStatus, pallets });
   }
 
   // BK-002: the packing list has been missing for 30 hours, so the 24-hour reminder is due.
@@ -214,6 +214,7 @@ export async function seedSamples() {
   );
   await q("UPDATE shipments SET created_at = now() - interval '31 hours' WHERE id = 'BK-002'");
 
+  await q(`UPDATE shipments SET declined_carriers = '["Carrier C"]' WHERE id = 'BK-114'`);
   for (const id of SAMPLE_IDS) await recheck(id, { role: "system" }, { email: false });
   await q("UPDATE shipments SET updated_at = (SELECT max(created_at) FROM events e WHERE e.shipment_id = shipments.id) WHERE id = ANY($1)", [SAMPLE_IDS]);
 
@@ -241,12 +242,21 @@ function docDetails(s: Sample, seller: (typeof SELLERS)[string], buyer: (typeof 
   return out;
 }
 
-async function seedTimeline(s: Sample, x: { carrier: (typeof CARRIERS)[number]; pickupIso: string | null; declared: boolean; appointment: string | null; customsStatus: string | null }) {
+const daysAgo = (iso: string) => (Date.now() - new Date(iso).getTime()) / 864e5;
+
+async function seedTimeline(s: Sample, x: { carrier: (typeof CARRIERS)[number]; pickupIso: string | null; declared: boolean; appointment: string | null; customsStatus: string | null; pallets: number }) {
   const ev = (role: string, name: string | null, action: string, at: string) =>
     q("INSERT INTO events (shipment_id, actor_role, actor_name, action, created_at) VALUES ($1,$2,$3,$4,$5)", [s.id, role, name, action, at]);
   const mail = (kind: string, subject: string, at: string) =>
     q("INSERT INTO emails (shipment_id, kind, to_address, subject, body, error, sent_at) VALUES ($1,$2,$3,$4,$5,$6,$7)",
       [s.id, kind, SELLERS[s.seller].email, subject, `(sample email) ${subject}`, "Sample data: not sent.", at]);
+  // Seller alert (Alerts page), as the app would have sent it: shown in the app, email in the log, Telegram not connected.
+  const alert = (topic: string, kind: string, severity: string, title: string, lines: string[], at: string, actions: object[] | null = null, resolved = false) =>
+    q(`INSERT INTO alerts (shipment_id, seller_name, topic, kind, severity, title, lines, actions, channels, read_at, resolved_at, created_at)
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12)`,
+      [s.id, s.seller, topic, kind, severity, title, JSON.stringify(lines), actions && JSON.stringify(actions),
+       JSON.stringify({ email: { status: "outbox", detail: "Sample data: saved to the email log." }, telegram: { status: "not_connected", detail: "Telegram isn't connected yet (no bot token)." } }),
+       resolved || daysAgo(at) > 2 ? at : null, resolved ? at : null, at]);
   const d0 = -s.submit;
   await ev("seller", s.seller.split(" ")[0], "Booking created", ago(d0 + 1));
   await ev("seller", s.seller.split(" ")[0], s.stage === "draft_missing_pl" ? "Uploaded the commercial invoice" : "Uploaded the commercial invoice and packing list", ago(d0 + 1, -1));
@@ -256,28 +266,55 @@ async function seedTimeline(s: Sample, x: { carrier: (typeof CARRIERS)[number]; 
   if (s.stage === "carrier_requested") return;
   if (s.stage === "carrier_declined") {
     await ev("carrier", null, `${s.carrier} declined the collection: No express capacity on the requested day`, ago(d0, -4));
+    await alert("carrier", "carrier_declined", "error", `${s.id}: the carrier declined. Choose another carrier`,
+      [`${s.carrier} declined the collection for ${s.id}.`, `Reason: "No express capacity on the requested day"`, "Book the next-best carrier below. The collection request is sent to them straight away."],
+      ago(d0, -4), [
+        // Next-best for "Fastest" after Carrier C: B (3 days), then A (5 days); prices from the rate card.
+        ...["Carrier B", "Carrier A"].map((name, i) => {
+          const c = CARRIERS.find((k) => k.name === name)!;
+          return { label: `Book ${name}${i === 0 ? " (recommended)" : ""}: £${(x.pallets * c.pricePerPallet[s.country]).toLocaleString("en-GB")}, ${c.transitDays} days, ${c.onTimePct}% on time`,
+            action: "rebook-carrier", params: { carrier: name } };
+        }),
+        { label: "See all carriers", action: "open", params: { anchor: "carrier" } },
+      ]);
     return;
   }
   await ev("carrier", null, `${s.carrier} confirmed the collection: ${dmy(x.pickupIso!)} at 09:30`, ago(d0, -6));
+  await alert("carrier", "carrier_confirmed", "success", `${s.id}: collection booked with ${s.carrier}`,
+    [`${s.carrier} has booked the collection for ${s.id}.`, `Collection: ${dmy(x.pickupIso!)} at 09:30`], ago(d0, -6));
   if (s.type === "Warehouse") {
     await ev("system", null, `Asked the warehouse in ${s.city} for a delivery slot`, ago(d0, -6));
     if (x.appointment === "proposed") {
       await ev("warehouse", "Tom", `Proposed a different delivery slot: ${dmy(isoDay(s.slot!))} at ${s.slotTime} – ${s.proposalNote}`, ago(1));
       await mail("appointment_proposed", `${s.id}: the warehouse proposed a different delivery slot`, ago(1));
+      await alert("slot", "appointment_proposed", "warning", `${s.id}: the warehouse proposed a different delivery slot`,
+        [`The warehouse in ${s.city} can't take ${s.id} at the requested time and has offered another slot:`, `${dmy(isoDay(s.slot!))} at ${s.slotTime}. Note: "${s.proposalNote}"`, "Accept it, or ask for another time:"],
+        ago(1), [
+          { label: `Accept ${dmy(isoDay(s.slot!))} at ${s.slotTime}`, action: "answer-slot", params: { accept: true } },
+          { label: "Ask for another time", action: "answer-slot", params: { accept: false } },
+        ]);
     }
     if (x.appointment === "confirmed") {
       await ev("warehouse", "Tom", `Confirmed the delivery slot: ${dmy(isoDay(s.slot!))} at ${s.slotTime}`, ago(Math.max(d0 - 1, 0), 1));
       await mail("appointment_confirmed", `${s.id}: delivery slot confirmed`, ago(Math.max(d0 - 1, 0), 1));
+      await alert("slot", "appointment_confirmed", "success", `${s.id}: delivery slot booked at the warehouse`,
+        [`The warehouse in ${s.city} has booked a delivery slot for ${s.id}.`, `Slot: ${dmy(isoDay(s.slot!))} at ${s.slotTime}`], ago(Math.max(d0 - 1, 0), 1));
     }
   }
   if (s.stage === "mismatch") {
     await ev("warehouse", "Tom", `Rejected the goods / flagged a mismatch: ${s.mismatch}`, ago(-(s.slot ?? 0), -3));
-    await mail("issues", `${s.id}: a few things to fix before customs`, ago(-(s.slot ?? 0), -3));
+    await mail("goods_rejected", `${s.id}: the warehouse rejected the goods`, ago(-(s.slot ?? 0), -3));
+    await alert("goods", "goods_rejected", "error", `${s.id}: the warehouse rejected the goods`,
+      [`The warehouse in ${s.city} rejected the goods for ${s.id}.`, `Reason from the warehouse: "${s.mismatch}"`,
+       "What to do: check what was shipped. If the booking is wrong, correct it in Clear2Ship (the warehouse is then asked to check again). If goods are missing, arrange to send them and tell the warehouse."],
+      ago(-(s.slot ?? 0), -3), [{ label: "Correct the booking", action: "open", params: { anchor: "checks" } }]);
     return;
   }
   if (ORDER.indexOf(s.stage) >= ORDER.indexOf("received")) {
     await ev("warehouse", "Tom", "Received and accepted the goods: they match the booking", ago(-(s.slot ?? s.pickup ?? 0), -3));
     await mail("goods_result", `${s.id}: goods received by the warehouse`, ago(-(s.slot ?? s.pickup ?? 0), -3));
+    await alert("goods", "goods_result", "success", `${s.id}: goods delivered and accepted at the warehouse`,
+      [`The warehouse received ${s.id} and the goods match the booking.`, "It now goes to your freight forwarder for customs."], ago(-(s.slot ?? s.pickup ?? 0), -3));
   }
   if (!x.declared) return;
   await ev("forwarder", "Ana", `Declaration submitted (${dmy(isoDay(s.decl!))})`, ago(-s.decl!));
@@ -291,6 +328,12 @@ async function seedTimeline(s: Sample, x: { carrier: (typeof CARRIERS)[number]; 
   if (x.customsStatus && x.customsStatus !== "Cleared") {
     await ev("forwarder", "Ana", `Confirmed customs status: ${x.customsStatus} – "${s.customs!.reason}"`, ago(-s.decl! - 1));
     await mail("exception", `${s.id}: customs status is now "${x.customsStatus}"`, ago(-s.decl! - 1));
+    const rejected = x.customsStatus === "Rejected";
+    await alert("customs", "exception", rejected ? "error" : "warning",
+      rejected ? `${s.id}: rejected by customs` : `${s.id}: on hold at customs, they need something from you`,
+      [`Your shipment ${s.id} is ${rejected ? "rejected by customs" : "on hold at customs"}.`, `Reason, exactly as written by customs: "${s.customs!.reason}"`, `What to do: ${s.customs!.next}`,
+       ...(rejected ? ["You can now correct the booking and documents in Clear2Ship, then tell your forwarder what you changed."] : []), "Who has to act: You (the seller)"],
+      ago(-s.decl! - 1), [{ label: rejected ? "Correct and reply to customs" : "Reply to customs", action: "open", params: { anchor: "customs-reply" } }], !!s.reply);
   }
   if (s.reply) {
     await q("INSERT INTO customs_replies (shipment_id, message, created_by, created_at) VALUES ($1,$2,'seller',$3)", [s.id, s.reply, ago(1)]);
@@ -300,5 +343,11 @@ async function seedTimeline(s: Sample, x: { carrier: (typeof CARRIERS)[number]; 
     if (s.customs) await ev("forwarder", "Ana", "Confirmed customs status: Cleared", ago(-s.decl! - 1));
     else await ev("forwarder", "Ana", "Confirmed customs status: Cleared", ago(-s.decl! - 2));
   }
-  if (s.stage === "delivered") await ev("forwarder", "Ana", "Marked as delivered", ago(-s.decl! - 3));
+  if (x.customsStatus === "Cleared") {
+    await alert("customs", "customs_cleared", "success", `${s.id}: cleared by customs`, [`Customs has cleared ${s.id}.`, "Your forwarder will mark it as delivered when it arrives."], ago(-s.decl! - 1));
+  }
+  if (s.stage === "delivered") {
+    await ev("forwarder", "Ana", "Marked as delivered", ago(-s.decl! - 3));
+    await alert("booking", "delivered", "success", `${s.id}: delivered`, [`${s.id} has been delivered to ${s.city}.`], ago(-s.decl! - 3));
+  }
 }

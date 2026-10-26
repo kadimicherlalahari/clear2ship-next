@@ -199,12 +199,38 @@ CREATE TABLE IF NOT EXISTS customs_replies (
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
+-- (email kinds: see the latest section below)
+ALTER TABLE shipments ADD COLUMN IF NOT EXISTS customs_next_steps TEXT;        -- what customs asked for (confirmed by a person)
+ALTER TABLE shipments ADD COLUMN IF NOT EXISTS customs_responsible TEXT;
+
+-- ---------------------------------------------------------------- v4: seller alerts (app + email + Telegram)
+
+-- Every update for a seller. Shown in the app, and also sent by email and Telegram.
+CREATE TABLE IF NOT EXISTS alerts (
+  id            SERIAL PRIMARY KEY,
+  shipment_id   TEXT NOT NULL REFERENCES shipments(id) ON DELETE CASCADE,
+  seller_name   TEXT,
+  topic         TEXT NOT NULL,                      -- carrier / slot / goods / customs / problems / booking
+  kind          TEXT NOT NULL,                      -- e.g. carrier_declined
+  severity      TEXT NOT NULL CHECK (severity IN ('success', 'info', 'warning', 'error')),
+  title         TEXT NOT NULL,
+  lines         JSONB NOT NULL,                     -- plain sentences
+  actions       JSONB,                              -- [{ label, action, params }] the seller can do from the alert
+  channels      JSONB,                              -- { email: {status, detail}, telegram: {status, detail} }
+  read_at       TIMESTAMPTZ,
+  resolved_at   TIMESTAMPTZ,                        -- the action was taken (here or elsewhere)
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+CREATE INDEX IF NOT EXISTS alerts_seller_idx ON alerts(seller_name, created_at DESC);
+CREATE INDEX IF NOT EXISTS alerts_shipment_idx ON alerts(shipment_id, created_at DESC);
+
+ALTER TABLE shipments ADD COLUMN IF NOT EXISTS seller_telegram_chat_id TEXT;  -- where Telegram alerts go
+ALTER TABLE shipments ADD COLUMN IF NOT EXISTS declined_carriers JSONB;       -- carriers that declined this collection
+
 ALTER TABLE emails DROP CONSTRAINT IF EXISTS emails_kind_check;
 ALTER TABLE emails ADD CONSTRAINT emails_kind_check CHECK (kind IN (
   'issues', 'reminder_24h', 'admin_48h', 'exception', 'submitted',
   'carrier_request', 'carrier_confirmed', 'carrier_declined',
   'appointment_request', 'appointment_confirmed', 'appointment_declined', 'appointment_proposed',
-  'customs_reply', 'resubmitted', 'goods_result'
+  'customs_reply', 'resubmitted', 'goods_result', 'goods_rejected'
 ));
-ALTER TABLE shipments ADD COLUMN IF NOT EXISTS customs_next_steps TEXT;        -- what customs asked for (confirmed by a person)
-ALTER TABLE shipments ADD COLUMN IF NOT EXISTS customs_responsible TEXT;

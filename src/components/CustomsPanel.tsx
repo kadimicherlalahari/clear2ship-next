@@ -80,6 +80,7 @@ export function CustomsExceptionPanel({ shipment: s, replies, canReply, act, bus
   const rejected = s.customs_status === "Rejected";
   return (
     <Card title={rejected ? "Customs rejected this shipment" : "Customs needs something from you"} className={rejected ? "border-red-400" : "border-amber-400"}>
+      <span id="customs-reply" />
       <div className="space-y-3 text-sm">
         <div className={`rounded-lg p-3 ${rejected ? "bg-red-50" : "bg-amber-50"}`}>
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Reason, exactly as written by customs</p>

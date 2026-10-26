@@ -1,21 +1,24 @@
-// Emails. With RESEND_API_KEY set they are sent through Resend; without it they are only saved
-// to the emails table and shown in the app's Outbox (for running locally).
+// Messages. Emails go through Resend when RESEND_API_KEY is set; otherwise they're saved to the
+// email log (shown to admins). Everything for a seller is an *alert*: shown in the app, emailed, and
+// sent on Telegram, with any actions the seller can take right from the alert.
 import { Resend } from "resend";
+import { makeActionToken } from "./actionLinks";
 import { q, type Row } from "./db";
 import { DOC_LABEL } from "./rules/docs";
+import { sendTelegram, type ChannelResult } from "./telegram";
 
 type Bundle = { shipment: Row; issues: Row[] };
 
 const WHO: Record<string, string> = { seller: "You (the seller)", warehouse: "The warehouse", forwarder: "Your freight forwarder", carrier: "The carrier", admin: "The Clear2Ship admin" };
-const appUrl = () => process.env.APP_URL || "http://localhost:3000";
+export const appUrl = () => process.env.APP_URL || "http://localhost:3100";
 
 export type EmailKind =
   | "issues" | "reminder_24h" | "admin_48h" | "exception" | "submitted"
   | "carrier_request" | "carrier_confirmed" | "carrier_declined"
   | "appointment_request" | "appointment_confirmed" | "appointment_declined" | "appointment_proposed"
-  | "customs_reply" | "resubmitted" | "goods_result";
+  | "customs_reply" | "resubmitted" | "goods_result" | "goods_rejected" | "customs_cleared" | "delivered";
 
-export async function sendEmail(shipmentId: string, kind: EmailKind, to: string | null, subject: string, body: string) {
+export async function sendEmail(shipmentId: string, kind: EmailKind, to: string | null, subject: string, body: string): Promise<ChannelResult> {
   let providerId: string | null = null;
   let error: string | null = null;
   const toAddress = to || "(no email address)";
@@ -39,8 +42,68 @@ export async function sendEmail(shipmentId: string, kind: EmailKind, to: string 
   );
   await q(
     "INSERT INTO events (shipment_id, actor_role, action) VALUES ($1, 'system', $2)",
-    [shipmentId, `Email "${subject}" ${providerId ? "sent" : "saved to the Outbox"} (to ${toAddress})`],
+    [shipmentId, `Email "${subject}" ${providerId ? "sent" : "saved to the email log"} (to ${toAddress})`],
   );
+  if (providerId) return { status: "sent", detail: `Emailed to ${toAddress}.` };
+  if (!to) return { status: "not_connected", detail: "No email address on this shipment." };
+  if (!process.env.RESEND_API_KEY) return { status: "outbox", detail: "Email isn't connected yet; saved to the email log." };
+  return { status: "failed", detail: error ?? "Email failed." };
+}
+
+// ---------------------------------------------------------------- seller alerts (app + email + Telegram)
+
+export type AlertAction =
+  | { label: string; action: "rebook-carrier"; params: { carrier: string } }
+  | { label: string; action: "answer-slot"; params: { accept: boolean } }
+  | { label: string; action: "request-slot"; params: Record<string, never> }
+  | { label: string; action: "open"; params: { anchor?: string } };
+
+export type SellerAlert = {
+  topic: "booking" | "carrier" | "slot" | "goods" | "customs" | "problems";
+  kind: EmailKind;
+  severity: "success" | "info" | "warning" | "error";
+  title: string;
+  lines: string[];
+  actions?: AlertAction[];
+};
+
+/** Link for an action: plain links for "open", signed one-time-confirm links for everything else. */
+export function actionUrl(shipmentId: string, alertId: number, index: number, a: AlertAction) {
+  if (a.action === "open") return `${appUrl()}/shipments/${shipmentId}${a.params.anchor ? `#${a.params.anchor}` : ""}`;
+  return `${appUrl()}/act/${makeActionToken(alertId, index)}`;
+}
+
+/** Tell the seller: save the alert (Alerts page), email it and send it on Telegram, with action buttons/links. */
+export async function notifySeller(s: Row, a: SellerAlert) {
+  const actions = a.actions ?? [];
+  const [row] = await q(
+    `INSERT INTO alerts (shipment_id, seller_name, topic, kind, severity, title, lines, actions)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING id`,
+    [s.id, s.seller_name, a.topic, a.kind, a.severity, a.title, JSON.stringify(a.lines), actions.length ? JSON.stringify(actions) : null],
+  );
+  const links = actions.map((x, i) => ({ text: x.label, url: actionUrl(s.id, row.id, i, x) }));
+  const shipmentLink = `${appUrl()}/shipments/${s.id}`;
+
+  const body = `Hi ${s.seller_name ?? "there"},
+
+${a.lines.join("\n")}
+${links.length ? `\nWhat you can do now:\n${links.map((l) => `  • ${l.text}: ${l.url}`).join("\n")}\n` : ""}
+Open the shipment: ${shipmentLink}
+
+– Clear2Ship`;
+  const email = await sendEmail(s.id, a.kind, s.seller_email, a.title, body);
+  const telegram = await sendTelegram(
+    s.seller_telegram_chat_id ?? null,
+    `${a.title}\n\n${a.lines.join("\n")}`,
+    [...links, { text: `Open ${s.id}`, url: shipmentLink }],
+  );
+  await q("UPDATE alerts SET channels = $2 WHERE id = $1", [row.id, JSON.stringify({ email, telegram })]);
+  return row.id as number;
+}
+
+/** The seller has dealt with it (here or from the alert): older alerts on this topic no longer need action. */
+export async function resolveAlerts(shipmentId: string, topic: SellerAlert["topic"]) {
+  await q("UPDATE alerts SET resolved_at = now() WHERE shipment_id = $1 AND topic = $2 AND resolved_at IS NULL AND actions IS NOT NULL", [shipmentId, topic]);
 }
 
 function problemList(issues: Row[]) {
@@ -76,42 +139,37 @@ ${text}Shipment: ${link}
   }
 
   const reminder = kind === "reminder_24h";
-  const subject = reminder
+  const title = reminder
     ? `Reminder: ${s.id} still needs your attention`
     : missingDocs.length
       ? `${s.id}: please upload the ${missingDocs.join(" and ")}`
       : `${s.id}: ${reds.length ? "a few things to fix before customs" : "a few things to check"}`;
-  const body = `Hi ${s.seller_name ?? "there"},
-
-${reminder ? "Just a reminder: these are still open on" : "We checked"} your shipment ${s.id} (${s.origin_city ?? "?"} → ${s.destination_city ?? "?"})${reminder ? " after 24 hours." : " and found a few things that need your attention."}
-
-${text}Once you've made the changes, we'll run the checks again automatically.
-
-Open the shipment: ${link}
-
-These checks are not a customs clearance. Nothing has been booked.
-
-– Clear2Ship`;
-  return sendEmail(s.id, kind, s.seller_email, subject, body);
+  const open = b.issues.filter((i) => i.status === "open");
+  return notifySeller(s, {
+    topic: "problems", kind, severity: reds.length ? "error" : "warning", title,
+    lines: [
+      `${reminder ? "Just a reminder: these are still open on" : "We checked"} your shipment ${s.id} (${s.origin_city ?? "?"} → ${s.destination_city ?? "?"})${reminder ? " after 24 hours." : " and found a few things that need your attention."}`,
+      ...open.map((i) => `• ${i.severity}: ${i.message} What to do: ${i.fix}`),
+      "Once you've made the changes, we'll run the checks again automatically.",
+    ],
+    actions: [{ label: "Fix them now", action: "open", params: { anchor: "checks" } }],
+  });
 }
 
 /** Customs on hold / rejected: the reason exactly as written, the next steps and who is responsible. */
 export async function sendExceptionEmail(s: Row, status: string, reason: string, nextSteps: string | null, responsible: string | null) {
-  const subject = `${s.id}: customs status is now "${status}"`;
-  const body = `Hi ${s.seller_name ?? "there"},
-
-Your shipment ${s.id} is ${status === "On hold" ? "on hold at customs" : "rejected by customs"}${s.declaration_ref ? ` (declaration ${s.declaration_ref})` : ""}.
-
-Reason, exactly as written in the customs message:
-"${reason}"
-
-Next steps: ${nextSteps || "Please contact your freight forwarder."}
-Who is responsible: ${WHO[responsible ?? ""] ?? "To be confirmed with your freight forwarder"}
-
-Open the shipment: ${appUrl()}/shipments/${s.id}
-
-– Clear2Ship`;
-  return sendEmail(s.id, "exception", s.seller_email, subject, body);
+  return notifySeller(s, {
+    topic: "customs", kind: "exception", severity: status === "Rejected" ? "error" : "warning",
+    title: status === "Rejected" ? `${s.id}: rejected by customs` : `${s.id}: on hold at customs, they need something from you`,
+    lines: [
+      `Your shipment ${s.id} is ${status === "On hold" ? "on hold at customs" : "rejected by customs"}${s.declaration_ref ? ` (declaration ${s.declaration_ref})` : ""}.`,
+      `Reason, exactly as written by customs: "${reason}"`,
+      `What to do: ${nextSteps || "Please contact your freight forwarder."}`,
+      status === "Rejected" ? "You can now correct the booking and documents in Clear2Ship, then tell your forwarder what you changed." : "",
+      `Who has to act: ${WHO[responsible ?? ""] ?? "To be confirmed with your freight forwarder"}`,
+    ].filter(Boolean),
+    actions: [{ label: status === "Rejected" ? "Correct and reply to customs" : "Reply to customs", action: "open", params: { anchor: "customs-reply" } }],
+  });
 }
 
 /**
@@ -197,27 +255,25 @@ Confirm or decline the slot here (choose the Warehouse role): ${appUrl()}/shipme
 
 /** Short update to the seller (submitted, carrier / slot confirmed or declined). */
 type SellerUpdate = "submitted" | "carrier_confirmed" | "carrier_declined" | "appointment_confirmed" | "appointment_declined"
-  | "appointment_proposed" | "resubmitted" | "goods_result";
+  | "appointment_proposed" | "resubmitted" | "goods_result" | "goods_rejected" | "customs_cleared" | "delivered";
 
-export async function sendSellerUpdate(s: Row, kind: SellerUpdate, lines: string[]) {
-  const subjects: Record<SellerUpdate, string> = {
-    appointment_proposed: `${s.id}: the warehouse proposed a different delivery slot`,
-    resubmitted: `${s.id}: resubmitted to customs`,
-    goods_result: `${s.id}: goods received by the warehouse`,
-    submitted: `${s.id}: booking submitted`,
-    carrier_confirmed: `${s.id}: collection confirmed by ${s.selected_carrier ?? "the carrier"}`,
-    carrier_declined: `${s.id}: the carrier declined the collection`,
-    appointment_confirmed: `${s.id}: delivery slot confirmed`,
-    appointment_declined: `${s.id}: the warehouse declined the delivery slot`,
-  };
-  const body = `Hi ${s.seller_name ?? "there"},
+const UPDATE: Record<SellerUpdate, { topic: SellerAlert["topic"]; severity: SellerAlert["severity"]; title: (s: Row) => string }> = {
+  submitted: { topic: "booking", severity: "info", title: (s) => `${s.id}: booking submitted` },
+  carrier_confirmed: { topic: "carrier", severity: "success", title: (s) => `${s.id}: collection booked with ${s.selected_carrier ?? "the carrier"}` },
+  carrier_declined: { topic: "carrier", severity: "error", title: (s) => `${s.id}: the carrier declined. Choose another carrier` },
+  appointment_confirmed: { topic: "slot", severity: "success", title: (s) => `${s.id}: delivery slot booked at the warehouse` },
+  appointment_declined: { topic: "slot", severity: "error", title: (s) => `${s.id}: the warehouse declined the delivery slot` },
+  appointment_proposed: { topic: "slot", severity: "warning", title: (s) => `${s.id}: the warehouse proposed a different delivery slot` },
+  resubmitted: { topic: "customs", severity: "info", title: (s) => `${s.id}: resubmitted to customs` },
+  goods_result: { topic: "goods", severity: "success", title: (s) => `${s.id}: goods delivered and accepted at the warehouse` },
+  goods_rejected: { topic: "goods", severity: "error", title: (s) => `${s.id}: the warehouse rejected the goods` },
+  customs_cleared: { topic: "customs", severity: "success", title: (s) => `${s.id}: cleared by customs` },
+  delivered: { topic: "booking", severity: "success", title: (s) => `${s.id}: delivered` },
+};
 
-${lines.join("\n")}
-
-Open the shipment: ${appUrl()}/shipments/${s.id}
-
-– Clear2Ship`;
-  return sendEmail(s.id, kind, s.seller_email, subjects[kind], body);
+export async function sendSellerUpdate(s: Row, kind: SellerUpdate, lines: string[], actions: AlertAction[] = []) {
+  const u = UPDATE[kind];
+  return notifySeller(s, { topic: u.topic, kind, severity: u.severity, title: u.title(s), lines, actions });
 }
 
 /** The seller's answer to a customs request, for the forwarder to send on. */

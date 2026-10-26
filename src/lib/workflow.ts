@@ -2,7 +2,10 @@
 import { q } from "./db";
 import { HttpError } from "./api";
 import { DETAIL_FIELDS, ITEM_DETAIL_FIELDS, normaliseDetail, validateDetail, type DetailValue, type DocDetails } from "./docDetails";
-import { sendAppointmentRequestEmail, sendCarrierRequestEmail, sendExceptionEmail, sendForwarderReplyEmail, sendSellerUpdate } from "./email";
+import {
+  resolveAlerts, sendAppointmentRequestEmail, sendCarrierRequestEmail, sendExceptionEmail, sendForwarderReplyEmail, sendSellerUpdate,
+  type AlertAction,
+} from "./email";
 import { extractDocument, GeminiUnavailable, readCustomsEmail } from "./gemini";
 import { DOC_LABEL, REQUIRED_DOCS } from "./rules/docs";
 import { cleanNumber, parseDate, toDisplayDate } from "./rules/parse";
@@ -119,6 +122,7 @@ export async function selectCarrier(id: string, name: string, actor: Actor) {
   const check = runAllChecks(b);
   const option = rankedCarriers(check).find((c) => c.name === name);
   if (!option) throw new HttpError(400, `${name} can't take this load. Choose one of the carriers shown.`);
+  if (((s.declined_carriers ?? []) as string[]).includes(name)) throw new HttpError(400, `${name} already declined this collection. Choose another carrier.`);
   if (s.selected_carrier === name) return check;
   await q("UPDATE shipments SET selected_carrier = $2 WHERE id = $1", [id, name]);
   const top = rankedCarriers(check)[0];
@@ -146,7 +150,30 @@ export async function resendCarrierRequest(id: string, actor: Actor) {
   await logEvent(id, actor, `Sent a new collection request to ${s.selected_carrier}`);
   const fresh = await load(id);
   await sendCarrierRequestEmail(fresh.shipment, fresh.items);
+  await resolveAlerts(id, "carrier");
   return recheck(id, actor);
+}
+
+/** After a decline, in one step (e.g. from the alert): choose this carrier and send it the collection request. */
+export async function rebookCarrier(id: string, carrier: string, actor: Actor) {
+  const b = await load(id);
+  if (b.shipment.carrier_status !== "declined") throw new HttpError(400, "This collection isn't waiting for a new carrier any more.");
+  await selectCarrier(id, carrier, actor);
+  return resendCarrierRequest(id, actor);
+}
+
+/** The next-best carriers after one declined, for the alert's "Book …" buttons. */
+async function nextCarrierActions(id: string): Promise<AlertAction[]> {
+  const b = await load(id);
+  const declined = (b.shipment.declined_carriers ?? []) as string[];
+  const options = rankedCarriers(runAllChecks(b)).filter((c) => !declined.includes(c.name)).slice(0, 2);
+  return [
+    ...options.map((c, i): AlertAction => ({
+      label: `Book ${c.name}${i === 0 ? " (recommended)" : ""}: £${c.price.toLocaleString("en-GB")}, ${c.transitDays} days, ${c.onTimePct}% on time`,
+      action: "rebook-carrier", params: { carrier: c.name },
+    })),
+    { label: "See all carriers", action: "open", params: { anchor: "carrier" } },
+  ];
 }
 
 /** The carrier confirms the collection (date, time, reference) or declines it. */
@@ -157,9 +184,16 @@ export async function carrierRespond(id: string, input: { act?: string; pickup_d
   if (input.act === "decline") {
     const note = (input.note ?? "").trim();
     if (!note) throw new HttpError(400, "Please say why the collection is declined.");
-    await q("UPDATE shipments SET carrier_status = 'declined', carrier_note = $2, selected_carrier = NULL WHERE id = $1", [id, `${s.selected_carrier}: ${note}`]);
+    const declined = [...new Set([...((s.declined_carriers ?? []) as string[]), s.selected_carrier])];
+    await q("UPDATE shipments SET carrier_status = 'declined', carrier_note = $2, selected_carrier = NULL, declined_carriers = $3 WHERE id = $1",
+      [id, `${s.selected_carrier}: ${note}`, JSON.stringify(declined)]);
     await logEvent(id, actor, `${s.selected_carrier} declined the collection: ${note}`);
-    await sendSellerUpdate(s, "carrier_declined", [`${s.selected_carrier} declined the collection for ${id}.`, `Reason: "${note}"`, "Please choose another carrier and send a new request."]);
+    const next = await nextCarrierActions(id);
+    await sendSellerUpdate(s, "carrier_declined", [
+      `${s.selected_carrier} declined the collection for ${id}.`,
+      `Reason: "${note}"`,
+      next.length > 1 ? "Book the next-best carrier below. The collection request is sent to them straight away." : "No other carrier can take this load. Please open the shipment.",
+    ], next);
     return recheck(id, actor);
   }
   const date = parseDate(input.pickup_date ?? "");
@@ -204,7 +238,8 @@ export async function appointmentRespond(id: string, input: { act?: string; date
     if (!note) throw new HttpError(400, "Please say why the slot is declined.");
     await q("UPDATE shipments SET appointment_status = 'declined', appointment_note = $2 WHERE id = $1", [id, note]);
     await logEvent(id, actor, `Declined the delivery slot request: ${note}`);
-    await sendSellerUpdate(s, "appointment_declined", [`The warehouse declined the delivery slot for ${id}.`, `Reason: "${note}"`, "Please send a new delivery slot request."]);
+    await sendSellerUpdate(s, "appointment_declined", [`The warehouse declined the delivery slot for ${id}.`, `Reason: "${note}"`, "Send a new delivery slot request below."],
+      [{ label: "Send a new slot request", action: "request-slot", params: {} }]);
     return recheck(id, actor);
   }
   const date = parseDate(input.date ?? "");
@@ -226,7 +261,10 @@ export async function appointmentRespond(id: string, input: { act?: string; date
     await sendSellerUpdate(s, "appointment_proposed", [
       `The warehouse in ${s.destination_city} can't take ${id} at the requested time and has offered another slot:`,
       `${fmtDate(date)} at ${time} (ref ${ref})${note ? `. Note: "${note}"` : ""}`,
-      "Please accept or decline it in Clear2Ship.",
+      "Accept it, or ask for another time:",
+    ], [
+      { label: `Accept ${fmtDate(date)} at ${time}`, action: "answer-slot", params: { accept: true } },
+      { label: "Ask for another time", action: "answer-slot", params: { accept: false } },
     ]);
     return recheck(id, actor);
   }
@@ -242,6 +280,7 @@ export async function appointmentRespond(id: string, input: { act?: string; date
 
 /** The seller accepts or declines a slot the warehouse proposed. */
 export async function answerProposedSlot(id: string, accept: boolean, actor: Actor) {
+  await resolveAlerts(id, "slot");
   const b = await load(id);
   const s = b.shipment;
   if (s.appointment_status !== "proposed") throw new HttpError(400, "There's no proposed delivery slot to answer.");
@@ -259,6 +298,7 @@ export async function answerProposedSlot(id: string, accept: boolean, actor: Act
 }
 
 export async function requestNewSlot(id: string, actor: Actor) {
+  await resolveAlerts(id, "slot");
   const b = await load(id);
   const s = b.shipment;
   if (s.appointment_status !== "declined") throw new HttpError(400, "A new slot request is only needed after the warehouse declines.");
@@ -434,7 +474,14 @@ export async function warehouseDecision(id: string, result: "accepted" | "mismat
     ? `Received and accepted the goods: they match the booking${note.trim() ? ` (note: ${note.trim()})` : ""}`
     : `Rejected the goods / flagged a mismatch: ${note.trim()}`);
   if (result === "accepted") {
+    await resolveAlerts(id, "goods");
     await sendSellerUpdate(b.shipment, "goods_result", [`The warehouse received ${id} and the goods match the booking.`, "It now goes to your freight forwarder for customs."]);
+  } else {
+    await sendSellerUpdate(b.shipment, "goods_rejected", [
+      `The warehouse in ${b.shipment.destination_city} rejected the goods for ${id}.`,
+      `Reason from the warehouse: "${note.trim()}"`,
+      "What to do: check what was shipped. If the booking is wrong, correct it in Clear2Ship (the warehouse is then asked to check again). If goods are missing, arrange to send them and tell the warehouse.",
+    ], [{ label: "Correct the booking", action: "open", params: { anchor: "checks" } }]);
   }
   return recheck(id, actor);
 }
@@ -514,6 +561,10 @@ export async function confirmCustomsStatus(
   );
   await logEvent(id, actor, `Confirmed customs status: ${status}${reason ? ` – "${reason}"` : ""}`, { reason, nextSteps, responsible });
   if (status !== "Cleared") await sendExceptionEmail(b.shipment, status, reason, nextSteps, responsible);
+  else {
+    await resolveAlerts(id, "customs");
+    await sendSellerUpdate(b.shipment, "customs_cleared", [`Customs has cleared ${id}${b.shipment.declaration_ref ? ` (declaration ${b.shipment.declaration_ref})` : ""}.`, "Your forwarder will mark it as delivered when it arrives."]);
+  }
   return recheck(id, actor);
 }
 
@@ -537,6 +588,7 @@ export async function sendCustomsReply(id: string, message: string, file: File |
   }
   await q("INSERT INTO customs_replies (shipment_id, message, document_id, created_by) VALUES ($1,$2,$3,$4)", [id, message.trim(), docId, actor.role]);
   await q("UPDATE shipments SET customs_reply_at = now() WHERE id = $1", [id]);
+  await resolveAlerts(id, "customs");
   await logEvent(id, actor, `Replied to customs via the forwarder: ${message.trim()}${file ? ` (attached ${file.name})` : ""}`);
   await sendForwarderReplyEmail(s, message.trim(), file?.name ?? null);
   return recheck(id, actor);
@@ -567,5 +619,6 @@ export async function markDelivered(id: string, actor: Actor) {
   if (b.shipment.status !== "Cleared") throw new HttpError(400, "Only cleared shipments can be marked as delivered.");
   await q("UPDATE shipments SET status = 'Delivered', pending_action = NULL, responsible_role = NULL WHERE id = $1", [id]);
   await logEvent(id, actor, "Marked as delivered");
+  await sendSellerUpdate(b.shipment, "delivered", [`${id} has been delivered to ${b.shipment.destination_city}.`]);
   await logEvent(id, { role: "system" }, "Status changed from Cleared to Delivered");
 }

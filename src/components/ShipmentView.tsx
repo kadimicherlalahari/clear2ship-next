@@ -18,7 +18,7 @@ import { api, Button, Card, ErrorNote, formatTime, InfoNote, postJson, ROLE_LABE
 
 type Row = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 type Bundle = {
-  shipment: Row; items: Row[]; documents: Doc[]; issues: Row[]; events: Row[]; customs: CustomsMsg[]; emails: Row[]; replies: Row[];
+  shipment: Row; items: Row[]; documents: Doc[]; issues: Row[]; events: Row[]; customs: CustomsMsg[]; emails: Row[]; replies: Row[]; alerts: Row[];
   chat: { role: "seller" | "app"; content: string }[];
   check: CheckLike & { docIssues: Issue[]; allIssues: Issue[]; readyForCustoms: boolean; inputBlocked: boolean; carrier: CarrierResult | null };
   readiness: Readiness;
@@ -192,20 +192,32 @@ export function ShipmentView({ id }: { id: string }) {
       {/* 9. Timeline */}
       <Timeline events={b.events as never} />
 
-      <Card title="Emails" actions={<Link href="/outbox" className="text-sm text-sky-700 hover:underline">Outbox</Link>}>
-        {!b.emails.length && <p className="text-sm text-slate-500">No emails yet.</p>}
-        <ul className="space-y-3">
-          {b.emails.map((m) => (
-            <li key={m.id} className="text-sm">
-              <details>
-                <summary className="cursor-pointer"><b>{m.subject}</b> <span className="text-xs text-slate-500">→ {m.to_address} · {formatTime(m.sent_at)}</span></summary>
-                <pre className="mt-1 whitespace-pre-wrap rounded bg-slate-50 p-2 font-sans text-xs text-slate-700">{m.body}</pre>
-              </details>
-              <p className={`text-xs ${m.provider_id ? "text-green-700" : "text-amber-700"}`}>{m.provider_id ? "Sent" : m.error}</p>
-            </li>
-          ))}
-        </ul>
-      </Card>
+      {isSeller && (
+        <Card title="Alerts sent to the seller" actions={<Link href="/alerts" className="text-sm text-sky-700 hover:underline">All alerts</Link>}>
+          {!b.alerts.length && <p className="text-sm text-slate-500">No alerts yet.</p>}
+          <ul className="space-y-2">
+            {b.alerts.map((a) => (
+              <li key={a.id} className="text-sm">
+                <p><b>{a.title}</b> <span className="text-xs text-slate-500">· {formatTime(a.created_at)}</span></p>
+                <p className="text-xs text-slate-500">
+                  App: shown · Email: {a.channels?.email?.status === "sent" ? "sent" : a.channels?.email?.status === "outbox" ? "in email log" : "not sent"} · Telegram: {a.channels?.telegram?.status === "sent" ? "sent" : "not connected"}
+                  {(a.actions ?? []).some((x: Row) => x.action !== "open") && (a.resolved_at ? " · ✓ done" : " · needs action")}
+                </p>
+              </li>
+            ))}
+          </ul>
+          {role === "admin" && b.emails.length > 0 && (
+            <details className="mt-3 text-sm">
+              <summary className="cursor-pointer text-slate-600">All emails for this shipment ({b.emails.length})</summary>
+              <ul className="mt-2 space-y-2">
+                {b.emails.map((m) => (
+                  <li key={m.id}><b>{m.subject}</b> <span className="text-xs text-slate-500">→ {m.to_address} · {formatTime(m.sent_at)} · {m.provider_id ? "sent" : m.error}</span></li>
+                ))}
+              </ul>
+            </details>
+          )}
+        </Card>
+      )}
     </div>
   );
 }

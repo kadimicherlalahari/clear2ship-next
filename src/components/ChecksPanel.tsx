@@ -299,6 +299,7 @@ export function ChecksPanel({ check, shipment, items, canFix, act, busy, showDis
   );
   return (
     <Card title="Checks">
+      <span id="checks" />
       <div className="space-y-4">
         <div className="space-y-2">
           <h3 className="text-sm font-semibold">Booking checks (R-01 to R-10)</h3>
