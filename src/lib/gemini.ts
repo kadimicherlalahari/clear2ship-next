@@ -9,35 +9,49 @@ export class GeminiUnavailable extends Error {}
 function client() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new GeminiUnavailable("GEMINI_API_KEY is not set");
-  return new GoogleGenAI({ apiKey, httpOptions: { timeout: Number(process.env.GEMINI_TIMEOUT_MS ?? 20000) } });
+  return new GoogleGenAI({ apiKey, httpOptions: { timeout: Number(process.env.GEMINI_TIMEOUT_MS ?? 25000) } });
 }
 
 const model = () => process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
 
-/** Google answers "busy" (429/503) or times out (504) at peak times; those are worth a quick second try. */
-function transient(e: unknown) {
-  const m = e instanceof Error ? e.message : String(e);
-  return /"code":\s*(429|500|503|504)|UNAVAILABLE|DEADLINE_EXCEEDED|RESOURCE_EXHAUSTED|timed? ?out|aborted|fetch failed|ECONNRESET/i.test(m);
-}
+/**
+ * At busy times one Gemini model can stall (504) or say it's overloaded (503) while the others answer
+ * in seconds. So each call tries the main model, then the backups, instead of waiting on the same one.
+ */
+const models = () =>
+  [...new Set([model(), ...(process.env.GEMINI_FALLBACK_MODELS ?? "gemini-3.1-flash-lite,gemini-3.5-flash").split(",").map((m) => m.trim()).filter(Boolean)])].slice(0, 3);
 
 async function generateJson<T>(contents: Parameters<GoogleGenAI["models"]["generateContent"]>[0]["contents"], schema: Schema, system: string): Promise<T> {
-  const attempts = 3;
-  for (let i = 1; ; i++) {
-    try {
-      const res = await client().models.generateContent({
-        model: model(),
-        contents,
-        config: { systemInstruction: system, responseMimeType: "application/json", responseSchema: schema, temperature: 0 },
-      });
-      return JSON.parse(res.text ?? "{}") as T;
-    } catch (e) {
-      if (e instanceof GeminiUnavailable) throw e;
-      if (i < attempts && transient(e)) { await new Promise((r) => setTimeout(r, 800 * i)); continue; }
-      const reason = e instanceof Error ? e.message.slice(0, 300) : String(e);
-      console.error(`Gemini (${model()}) failed after ${i} tr${i === 1 ? "y" : "ies"}: ${reason}`);
-      throw new GeminiUnavailable(reason);
+  const start = Date.now();
+  const tried: string[] = [];
+  let list = models();
+  // "High demand" refusals come back in a second or two, so a second round after a short pause is cheap.
+  // A model that doesn't exist (404) or a stall (timeout) isn't tried again.
+  for (let round = 1; round <= 2 && list.length; round++) {
+    if (round === 2) {
+      if (Date.now() - start > 45000) break;
+      await new Promise((r) => setTimeout(r, 2000));
     }
+    const again: string[] = [];
+    for (const m of list) {
+      try {
+        const res = await client().models.generateContent({
+          model: m,
+          contents,
+          config: { systemInstruction: system, responseMimeType: "application/json", responseSchema: schema, temperature: 0 },
+        });
+        return JSON.parse(res.text ?? "{}") as T;
+      } catch (e) {
+        if (e instanceof GeminiUnavailable) throw e;
+        const reason = e instanceof Error ? e.message.slice(0, 200) : String(e);
+        console.error(`Gemini ${m} failed (round ${round}): ${reason}`);
+        tried.push(`${m}: ${reason}`);
+        if (/"code":\s*(429|503)|UNAVAILABLE|RESOURCE_EXHAUSTED|high demand/i.test(reason)) again.push(m);
+      }
+    }
+    list = again;
   }
+  throw new GeminiUnavailable(tried.join(" | ").slice(0, 600));
 }
 
 const NO_GUESS = `Rules you must follow:
