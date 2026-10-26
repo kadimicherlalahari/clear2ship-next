@@ -9,22 +9,32 @@ export class GeminiUnavailable extends Error {}
 function client() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new GeminiUnavailable("GEMINI_API_KEY is not set");
-  return new GoogleGenAI({ apiKey, httpOptions: { timeout: Number(process.env.GEMINI_TIMEOUT_MS ?? 25000) } });
+  return new GoogleGenAI({ apiKey, httpOptions: { timeout: Number(process.env.GEMINI_TIMEOUT_MS ?? 20000) } });
 }
 
-const model = () => process.env.GEMINI_MODEL || "gemini-2.5-flash";
+const model = () => process.env.GEMINI_MODEL || "gemini-3.5-flash-lite";
+
+/** Google answers "busy" (429/503) or times out (504) at peak times; those are worth a quick second try. */
+function transient(e: unknown) {
+  const m = e instanceof Error ? e.message : String(e);
+  return /"code":\s*(429|500|503|504)|UNAVAILABLE|DEADLINE_EXCEEDED|RESOURCE_EXHAUSTED|timed? ?out|aborted|fetch failed|ECONNRESET/i.test(m);
+}
 
 async function generateJson<T>(contents: Parameters<GoogleGenAI["models"]["generateContent"]>[0]["contents"], schema: Schema, system: string): Promise<T> {
-  try {
-    const res = await client().models.generateContent({
-      model: model(),
-      contents,
-      config: { systemInstruction: system, responseMimeType: "application/json", responseSchema: schema, temperature: 0 },
-    });
-    return JSON.parse(res.text ?? "{}") as T;
-  } catch (e) {
-    if (e instanceof GeminiUnavailable) throw e;
-    throw new GeminiUnavailable(e instanceof Error ? e.message.slice(0, 300) : String(e));
+  const attempts = 3;
+  for (let i = 1; ; i++) {
+    try {
+      const res = await client().models.generateContent({
+        model: model(),
+        contents,
+        config: { systemInstruction: system, responseMimeType: "application/json", responseSchema: schema, temperature: 0 },
+      });
+      return JSON.parse(res.text ?? "{}") as T;
+    } catch (e) {
+      if (e instanceof GeminiUnavailable) throw e;
+      if (i < attempts && transient(e)) { await new Promise((r) => setTimeout(r, 800 * i)); continue; }
+      throw new GeminiUnavailable(e instanceof Error ? e.message.slice(0, 300) : String(e));
+    }
   }
 }
 
@@ -49,6 +59,8 @@ function guardFields(obj: Record<string, { value: string | null; source: string 
   for (const [k, f] of Object.entries(obj)) {
     if (!f || f.value === null || f.value === undefined || String(f.value).trim() === "") continue;
     if (!f.source || !hay.includes(norm(f.source))) continue;
+    // A priority must be said in words ("cheapest", "most reliable"…), not read into a deadline like "7 days max".
+    if (k === "seller_priority" && !norm(f.source).includes(norm(String(f.value)).replace(/^most /, "").slice(0, 4))) continue;
     out[k] = { value: String(f.value), source: f.source };
   }
   return out;
