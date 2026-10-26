@@ -73,6 +73,21 @@ export function ShipmentView({ id }: { id: string }) {
   const chosen = b.check.carrier?.pick ? [b.check.carrier.pick, ...b.check.carrier.alternatives].find((c) => c.name === s.selected_carrier) : undefined;
   const booked = s.carrier_status === "confirmed";
 
+  // Chat for this booking: change details, or ask about it.
+  const chatFirst = !s.submitted_at && b.check.inputBlocked;
+  const chatCard = (
+    <Card title={chatFirst ? "Or carry on in chat" : "Chat about this booking"}>
+      {isSeller ? (
+        <>
+          <p className="mb-3 text-sm text-slate-600">{chatFirst
+            ? "Fill in the missing details above, or tell me them here, e.g. \"Rotterdam, warehouse, ready 21-11-2026\"."
+            : <>Change a detail (e.g. &quot;make it 4 pallets&quot;) or ask a question (e.g. &quot;when is the collection?&quot;).</>}</p>
+          <Chat shipmentId={id} initialMessages={b.chat} onReply={load} />
+        </>
+      ) : <InfoNote>The chat is for the seller. Switch role to Seller to use it.</InfoNote>}
+    </Card>
+  );
+
   return (
     <div className="space-y-5">
       {/* 1. Header and what happens next */}
@@ -117,18 +132,13 @@ export function ShipmentView({ id }: { id: string }) {
       {/* 2. Checks, each with its fix right below it */}
       <ChecksPanel check={b.check} shipment={s} items={b.items} canFix={isSeller && !locked} act={act} busy={busy} showDisclaimer={!booked} />
 
+      {/* A draft that still has missing details (e.g. a chat the seller left half-way): chat right under the gaps. */}
+      {chatFirst && chatCard}
+
       {/* 3. Carrier recommendations: ranked, selectable, regenerate by priority */}
       <CarrierPanel carrier={b.check.carrier} shipment={s} canChoose={isSeller && !locked} act={act} busy={busy} />
 
-      {/* Chat for this booking: change details, or ask about it */}
-      <Card title="Chat about this booking">
-        {isSeller ? (
-          <>
-            <p className="mb-3 text-sm text-slate-600">Change a detail (e.g. &quot;make it 4 pallets&quot;) or ask a question (e.g. &quot;when is the collection?&quot;).</p>
-            <Chat shipmentId={id} initialMessages={b.chat} onReply={load} />
-          </>
-        ) : <InfoNote>The chat is for the seller. Switch role to Seller to use it.</InfoNote>}
-      </Card>
+      {!chatFirst && chatCard}
 
       {/* 4. Booking overview (key facts + everything the documents need) */}
       <BookingOverview shipment={s} items={b.items}
