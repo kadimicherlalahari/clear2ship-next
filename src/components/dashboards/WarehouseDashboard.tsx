@@ -107,9 +107,14 @@ function slotText(s: Row) {
   }
 }
 
-export function WarehouseDashboard({ data }: { data: Data }) {
+export function WarehouseDashboard({ data: all }: { data: Data }) {
   const { busy, msg, run } = useRowAction();
   const [filter, setFilter] = useState("all");
+  // Narrow everything below the banner to one seller.
+  const [seller, setSeller] = useState("");
+  const sellers = [...new Set([...all.scheduled, ...all.pending, ...all.history].map((s) => s.seller_name).filter(Boolean))].sort() as string[];
+  const bySeller = (rows: Row[]) => (seller ? rows.filter((s) => s.seller_name === seller) : rows);
+  const data: Data = { scheduled: bySeller(all.scheduled), pending: bySeller(all.pending), history: bySeller(all.history) };
   const today = todayIso();
   const notReceived = data.scheduled.filter((s) => !s.warehouse_result);
   const weekEnd = new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10);
@@ -143,6 +148,16 @@ export function WarehouseDashboard({ data }: { data: Data }) {
           { label: "Goods rejected, open", value: data.history.filter((s) => s.warehouse_result === "mismatch" && s.status === "Mismatch").length, tone: "red" },
         ]}
       />
+
+      <div className="flex flex-wrap items-center gap-2">
+        <label htmlFor="wh-seller" className="text-sm font-semibold text-slate-900">Seller</label>
+        <select id="wh-seller" value={seller} onChange={(e) => setSeller(e.target.value)}
+          className="rounded-full border border-slate-300 bg-white px-3.5 py-1.5 text-sm font-medium focus:border-sky-500 focus:outline-none focus:ring-1 focus:ring-sky-500">
+          <option value="">All sellers ({sellers.length})</option>
+          {sellers.map((n) => <option key={n}>{n}</option>)}
+        </select>
+        {seller && <button type="button" onClick={() => setSeller("")} className="text-sm font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline">Show all</button>}
+      </div>
 
       <div className="grid grid-cols-7 gap-1.5" aria-label="Deliveries in the next 7 days">
         {week.map((d) => {
