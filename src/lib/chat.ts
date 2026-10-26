@@ -70,6 +70,29 @@ function validate(field: string, value: string, label: string, raw: RawBooking):
 
 // ---------------------------------------------------------------- merge Gemini's fields into the booking
 
+/**
+ * Safety net for short answers like "SouthAsian Foods, Rotterdam, Warehouse": when the app just asked for a field
+ * and the seller's message contains exactly one of its allowed values word for word, take it. This reads the
+ * seller's own words against fixed lists (no guessing), and never overrides what Gemini read or what's saved.
+ */
+export function fillFromAllowedWords(message: string, lastQuestion: string | null, raw: RawBooking, ex: ChatExtraction): ChatExtraction {
+  const asked = (lastQuestion ?? "").toLowerCase();
+  const one = (options: readonly string[]) => {
+    const found = options.filter((o) => new RegExp(`(^|[^a-z])${o}([^a-z]|$)`, "i").test(message));
+    return found.length === 1 ? found[0] : null;
+  };
+  const booking = { ...ex.booking };
+  const add = (field: string, askedFor: string, value: string | null) => {
+    if (value && asked.includes(askedFor) && !booking[field] && blank(raw[field])) booking[field] = { value, source: value };
+  };
+  add("destination_city", "destination city", one(ALL_DESTINATION_CITIES));
+  const type = one(["warehouse", "business address"]);
+  add("destination_type", "warehouse or a business address", type && (type === "warehouse" ? "Warehouse" : "Business address"));
+  const priority = one(["cheapest", "fastest", "most reliable", "balanced"]);
+  add("seller_priority", "what matters most", priority && priority[0].toUpperCase() + priority.slice(1));
+  return { ...ex, booking };
+}
+
 export function applyExtraction(raw: RawBooking, ex: ChatExtraction): { raw: RawBooking; rejected: string[]; derived: string[] } {
   const next: RawBooking = { ...raw, items: (raw.items ?? []).map((i) => ({ ...i })) };
   const rejected: string[] = [];
@@ -218,7 +241,8 @@ export async function handleChatMessage(shipmentId: string | null, message: stri
   let ex: ChatExtraction = { booking: {}, items: [], unknown: [] };
   if (!isYes) {
     try {
-      ex = await extractFromChat(message, state.lastQuestion, (oldRaw.items ?? []).map((i) => String(i.sku ?? "")).filter(Boolean));
+      ex = fillFromAllowedWords(message, state.lastQuestion, oldRaw,
+        await extractFromChat(message, state.lastQuestion, (oldRaw.items ?? []).map((i) => String(i.sku ?? "")).filter(Boolean)));
     } catch (e) {
       const reply = "Sorry, I couldn't read that message just now. Please use the step-by-step form below instead. Nothing you entered has been lost.";
       await save(id, "app", reply);

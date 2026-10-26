@@ -1,6 +1,6 @@
 // T10 and the chat rules of section 3 (code side only; Gemini's reading is replaced by fixed field values).
 import { describe, expect, it } from "vitest";
-import { applyExtraction, missingFields, type ChatState } from "../src/lib/chat";
+import { applyExtraction, fillFromAllowedWords, missingFields, type ChatState } from "../src/lib/chat";
 import type { ChatExtraction } from "../src/lib/gemini";
 import { checkBooking } from "../src/lib/rules/rules";
 import { diffBookings } from "../src/lib/shipments";
@@ -61,5 +61,28 @@ describe("T10 and chat rules", () => {
     const { raw } = applyExtraction(T1, ex({}, [{ sku: "mug-01", quantity: "1,000" }]));
     expect(raw.items).toHaveLength(1);
     expect(raw.items![0].quantity).toBe(1000);
+  });
+});
+
+describe("short answers to the app's question", () => {
+  const q = "Could you tell me:\n1) your business name\n2) the destination city (Amsterdam, Rotterdam)\n3) whether it's going to a warehouse or a business address";
+  const raw = { destination_country: "Netherlands", items: [] } as unknown as RawBooking;
+  const fromGemini = { booking: { seller_name: { value: "SouthAsian Foods", source: "SouthAsian Foods" } }, items: [], unknown: [] };
+
+  it("keeps the city and type the seller typed, even if Gemini missed them", () => {
+    const ex = fillFromAllowedWords("SouthAsian Foods, Rotterdam, Warehouse", q, raw, fromGemini);
+    expect(ex.booking.destination_city?.value).toBe("Rotterdam");
+    expect(ex.booking.destination_type?.value).toBe("Warehouse");
+    expect(ex.booking.seller_name?.value).toBe("SouthAsian Foods");
+  });
+
+  it("only fills what was just asked, and never a value already saved", () => {
+    expect(fillFromAllowedWords("from my warehouse in Leeds", "Could you tell me the date it's ready to ship (DD-MM-YYYY)?", raw, { booking: {}, items: [], unknown: [] }).booking).toEqual({});
+    const saved = { ...raw, destination_city: "Amsterdam" } as unknown as RawBooking;
+    expect(fillFromAllowedWords("Rotterdam", q, saved, { booking: {}, items: [], unknown: [] }).booking.destination_city).toBeUndefined();
+  });
+
+  it("doesn't pick when two choices are named", () => {
+    expect(fillFromAllowedWords("Amsterdam or Rotterdam, not sure", q, raw, { booking: {}, items: [], unknown: [] }).booking.destination_city).toBeUndefined();
   });
 });

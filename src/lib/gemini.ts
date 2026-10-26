@@ -120,6 +120,8 @@ export async function extractFromChat(message: string, lastQuestion: string | nu
   const system = `You read a seller's chat message about an export shipment and return the shipment details it states.
 ${NO_GUESS}
 - "source" must be copied from the SELLER MESSAGE only, never from the app's question.
+- The app's question may list the allowed choices (e.g. "the destination city (Amsterdam, Rotterdam)"). If the seller's message
+  names one of them, return it: it's the seller's answer, with the seller's words as the source.
 - Booking fields: seller_name, origin_city, destination_city, destination_country, destination_type ("Warehouse" or "Business address"),
   ready_date (as written), seller_priority (Cheapest/Fastest/Most reliable/Balanced, only if the seller says it), pallets, cartons (total for the shipment),
   declared_value (total value), gross_weight_kg, appointment_booked ("Yes"/"No", delivery slot at the warehouse), preferred_carrier.

@@ -98,13 +98,19 @@ async function SellerDashboard({ searchParams }: { searchParams: Promise<{ statu
             {shipments.map((s) => (
               <tr key={s.id} className="hover:bg-slate-50">
                 <td className="px-4 py-3">
-                  <Link href={`/shipments/${s.id}`} className="font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline focus-visible:underline">{s.id}</Link>
+                  <Link href={s.resume_chat ? `/new?draft=${s.id}` : `/shipments/${s.id}`} className="font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline focus-visible:underline">{s.id}</Link>
                   <div className="text-xs text-slate-500">
                     {s.seller_name ?? "No seller yet"} · {s.origin_city ?? "?"} → {s.destination_city ?? "?"}
                   </div>
                 </td>
                 <td className="px-4 py-3"><StatusBadge status={s.status} /></td>
-                <td className="max-w-xs px-4 py-3 text-slate-700">{s.pending_action ?? "–"}</td>
+                <td className="max-w-xs px-4 py-3 text-slate-700">
+                  {s.resume_chat ? (
+                    <Link href={`/new?draft=${s.id}`} className="font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline">
+                      Continue in chat <ArrowRight aria-hidden className="inline h-3.5 w-3.5" />
+                    </Link>
+                  ) : s.pending_action ?? "–"}
+                </td>
                 <td className="px-4 py-3">{s.responsible_role ? WHO[s.responsible_role] ?? s.responsible_role : "–"}</td>
                 <td className="px-4 py-3 text-xs">
                   {s.reds > 0 && <span className="mr-1 rounded bg-red-600 px-1.5 py-0.5 font-bold text-white">{s.reds} RED</span>}

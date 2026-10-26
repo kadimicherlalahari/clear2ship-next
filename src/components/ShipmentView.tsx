@@ -120,6 +120,16 @@ export function ShipmentView({ id }: { id: string }) {
       {/* 3. Carrier recommendations: ranked, selectable, regenerate by priority */}
       <CarrierPanel carrier={b.check.carrier} shipment={s} canChoose={isSeller && !locked} act={act} busy={busy} />
 
+      {/* Chat for this booking: change details, or ask about it */}
+      <Card title="Chat about this booking">
+        {isSeller ? (
+          <>
+            <p className="mb-3 text-sm text-slate-600">Change a detail (e.g. &quot;make it 4 pallets&quot;) or ask a question (e.g. &quot;when is the collection?&quot;).</p>
+            <Chat shipmentId={id} initialMessages={b.chat} onReply={load} />
+          </>
+        ) : <InfoNote>The chat is for the seller. Switch role to Seller to use it.</InfoNote>}
+      </Card>
+
       {/* 4. Booking overview (key facts + everything the documents need) */}
       <BookingOverview shipment={s} items={b.items}
         actions={!locked && isSeller && !editing ? <Button variant="secondary" onClick={() => setEditing(true)}>Edit booking</Button> : null}
@@ -193,16 +203,6 @@ export function ShipmentView({ id }: { id: string }) {
           </NeedsRole>
         </Card>
       )}
-
-      {/* 8. Chat for this booking: change details, or ask about it */}
-      <Card title="Chat about this booking">
-        {isSeller ? (
-          <>
-            <p className="mb-3 text-sm text-slate-600">Change a detail (e.g. &quot;make it 4 pallets&quot;) or ask a question (e.g. &quot;when is the collection?&quot;).</p>
-            <Chat shipmentId={id} initialMessages={b.chat} onReply={load} />
-          </>
-        ) : <InfoNote>The chat is for the seller. Switch role to Seller to use it.</InfoNote>}
-      </Card>
 
       {/* 9. Timeline */}
       <Timeline events={b.events as never} />

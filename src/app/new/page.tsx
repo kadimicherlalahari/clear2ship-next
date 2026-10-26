@@ -5,7 +5,7 @@ import { BookingForm, toFormValues } from "@/components/BookingForm";
 import { Chat } from "@/components/Chat";
 import { ExcelUpload } from "@/components/ExcelUpload";
 import { useRole } from "@/components/RoleSwitcher";
-import { postJson } from "@/components/ui";
+import { api, postJson } from "@/components/ui";
 
 const TABS = [
   { id: "chat", label: "Chat" },
@@ -16,6 +16,8 @@ type Tab = (typeof TABS)[number]["id"];
 
 export default function NewBooking() {
   const [tab, setTab] = useState<Tab>("chat");
+  const [draft, setDraft] = useState<{ id: string; chat: { role: "seller" | "app"; content: string }[] } | null>(null);
+  const [loadingDraft, setLoadingDraft] = useState(false);
   const router = useRouter();
   const role = useRole();
 
@@ -24,11 +26,20 @@ export default function NewBooking() {
     if (role !== "seller" && role !== "admin") { router.replace("/"); router.refresh(); }
   }, [role, router]);
 
-  // Open a tab from the link, e.g. /new?tab=excel
+  // Open a tab from the link, e.g. /new?tab=excel. /new?draft=BK-129 carries on a chat the seller left half-way.
   useEffect(() => {
-    const t = new URLSearchParams(window.location.search).get("tab");
+    const params = new URLSearchParams(window.location.search);
+    const t = params.get("tab");
     if (TABS.some((x) => x.id === t)) setTab(t as Tab);
-  }, []);
+    const id = params.get("draft");
+    if (id) {
+      setLoadingDraft(true);
+      api<{ shipment: { id: string; submitted_at: string | null }; chat: { role: "seller" | "app"; content: string }[] }>(`/api/shipments/${encodeURIComponent(id)}`)
+        .then((b) => (b.shipment.submitted_at ? router.replace(`/shipments/${b.shipment.id}`) : setDraft({ id: b.shipment.id, chat: b.chat })))
+        .catch(() => setDraft(null))
+        .finally(() => setLoadingDraft(false));
+    }
+  }, [router]);
   const choose = (t: Tab) => {
     setTab(t);
     window.history.replaceState(null, "", t === "chat" ? "/new" : `/new?tab=${t}`);
@@ -48,7 +59,16 @@ export default function NewBooking() {
           </button>
         ))}
       </div>
-      {tab === "chat" && <Chat />}
+      {tab === "chat" && (loadingDraft
+        ? <p className="text-sm text-slate-600">Opening your booking…</p>
+        : draft
+          ? (
+            <div className="space-y-2">
+              <p className="text-sm text-slate-600">Carrying on with <b>{draft.id}</b> where you left off.</p>
+              <Chat key={draft.id} shipmentId={draft.id} initialMessages={draft.chat} />
+            </div>
+          )
+          : <Chat />)}
       {tab === "form" && (
         <div className="rounded-xl border border-slate-200 bg-white p-5">
           <BookingForm initial={toFormValues(null)} submitLabel="Create booking and check" onSubmit={async (booking, email) => {

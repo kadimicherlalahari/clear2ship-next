@@ -1,5 +1,6 @@
 "use client";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CheckView, type CheckLike } from "./CheckView";
 import { api, Button, Card, ErrorNote, LevelBadge } from "./ui";
@@ -14,6 +15,7 @@ export function ExcelUpload() {
   const [err, setErr] = useState<string | null>(null);
   const [resp, setResp] = useState<Resp | null>(null);
   const [open, setOpen] = useState<string | null>(null);
+  const router = useRouter();
 
   async function upload() {
     if (!file) return;
@@ -21,7 +23,11 @@ export function ExcelUpload() {
     try {
       const fd = new FormData();
       fd.append("file", file);
-      setResp(await api<Resp>("/api/upload-excel", { method: "POST", body: fd }));
+      const r = await api<Resp>("/api/upload-excel", { method: "POST", body: fd });
+      // One booking: go straight to it. Several: show the list, each with its own link.
+      const saved = r.results.filter((x) => !x.skipped);
+      if (saved.length === 1 && r.results.length === 1 && !r.errors.length) { router.push(`/shipments/${saved[0].id}`); return; }
+      setResp(r);
     } catch (e) { setErr((e as Error).message); } finally { setBusy(false); }
   }
 

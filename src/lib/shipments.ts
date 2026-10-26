@@ -418,6 +418,9 @@ export async function listShipments(status?: string) {
     `SELECT s.id, s.seller_name, s.origin_city, s.destination_city, s.destination_country, s.destination_type, s.status,
             s.pending_action, s.responsible_role, s.updated_at, s.last_check, s.submitted_at, s.declaration_ref, s.customs_reply_at,
             s.carrier_status, s.appointment_status,
+            -- A chat booking the seller left before confirming it: it reopens in New booking to carry on.
+            (s.status = 'Draft' AND s.submitted_at IS NULL AND COALESCE((s.chat_state->>'confirmed')::boolean, false) = false
+              AND EXISTS (SELECT 1 FROM chat_messages c WHERE c.shipment_id = s.id)) AS resume_chat,
             (SELECT count(*)::int FROM issues i WHERE i.shipment_id = s.id AND i.status = 'open' AND i.severity = 'RED') AS reds,
             (SELECT count(*)::int FROM issues i WHERE i.shipment_id = s.id AND i.status = 'open' AND i.severity = 'AMBER') AS ambers
        FROM shipments s ${where} ORDER BY s.updated_at DESC`,
