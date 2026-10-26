@@ -23,8 +23,10 @@ export const DOC_FIELDS: Record<DocKind, { totals: string[]; item: string[] }> =
   },
 };
 
-const d = (code: string, severity: "RED" | "AMBER", key: string, message: string, fix: string, compare?: MismatchInfo): Issue =>
-  ({ code, kind: severity, severity, key: `${code}:${key}`, message, fix, owner: "seller", compare });
+// Document checks are warnings: they show what's missing or doesn't match, but never stop the shipment.
+// Only the booking details and the rulebook (R-01..R-10) block. `level` says how serious the gap is in words.
+const d = (code: string, _level: "RED" | "AMBER", key: string, message: string, fix: string, compare?: MismatchInfo): Issue =>
+  ({ code, kind: "WARNING", severity: "AMBER", key: `${code}:${key}`, message, fix, owner: "seller", compare });
 
 /** The exact words a value was read from, and whether the seller has corrected it. */
 function sourceOf(doc: ExtractedDoc | null, field: string) {

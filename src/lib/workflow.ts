@@ -83,7 +83,7 @@ export async function submitBooking(id: string, actor: Actor, input: { summaryCo
   if (s.submitted_at) throw new HttpError(400, "This booking has already been submitted.");
   const check = runAllChecks(b);
   const readiness = submitReadiness(b, check);
-  const notDone = readiness.items.filter((i) => !i.ok);
+  const notDone = readiness.items.filter((i) => !i.ok && !i.warning);
   if (notDone.length) throw new HttpError(400, `Not ready to submit yet: ${notDone.map((i) => i.label).join("; ")}.`);
   if (!input.summaryConfirmed) throw new HttpError(400, "Please tick that you've checked the booking summary.");
   const date = parseDate(input.collection_date ?? "");

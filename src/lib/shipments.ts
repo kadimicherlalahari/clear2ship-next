@@ -215,7 +215,8 @@ export async function updateBooking(id: string, raw: RawBooking, actor: Actor, h
 
 // ---------------------------------------------------------------- check + status
 
-export type FullCheck = CheckResult & { docIssues: Issue[]; allIssues: Issue[]; readyForCustoms: boolean };
+/** `blocking`: the problems that stop the shipment (booking details, rulebook, carrier/warehouse events). Document warnings never do. */
+export type FullCheck = CheckResult & { docIssues: Issue[]; allIssues: Issue[]; blocking: Issue[]; readyForCustoms: boolean };
 
 /** Names of the carriers that can take this load, best first for the seller's priority. */
 export const rankedCarriers = (check: CheckResult) =>
@@ -248,8 +249,9 @@ export function runAllChecks(bundle: ShipmentBundle, raw?: RawBooking): FullChec
     red("APPOINTMENT", "declined", `The warehouse declined the delivery slot${s.appointment_note ? `: "${s.appointment_note}"` : "."}`,
       "Send a new delivery slot request.");
   }
+  const blocking = [...result.issues, ...extra];
   const allIssues = [...result.issues, ...docIssues, ...extra];
-  return { ...result, docIssues, allIssues, readyForCustoms: !allIssues.some((i) => i.severity === "RED") };
+  return { ...result, docIssues, allIssues, blocking, readyForCustoms: !blocking.some((i) => i.severity === "RED") };
 }
 
 /** An AMBER item counts as checked when the seller ticked it and the message hasn't changed since. */
@@ -258,16 +260,17 @@ export function isAcknowledged(s: Row, issue: Issue) {
   return !!ack && ack.message === issue.message;
 }
 
-/** AMBER items the seller must fix or tick (the "please confirm the upload" step is covered by the documents item). */
+/** AMBER rulebook items the seller must fix or tick. Document warnings don't need a tick. */
 export const ambersToCheck = (check: FullCheck) =>
-  check.allIssues.filter((i) => i.severity === "AMBER" && !i.key.endsWith(":confirm"));
+  check.blocking.filter((i) => i.severity === "AMBER");
 
-export type ReadinessItem = { key: string; label: string; ok: boolean; detail: string; action: string };
+/** `warning`: shown on the submit screen when not done, but doesn't stop Submit. */
+export type ReadinessItem = { key: string; label: string; ok: boolean; detail: string; action: string; warning?: boolean };
 
-/** Everything that must be true before the seller can press Submit booking. */
+/** What must be true before the seller can press Submit booking (documents are warnings only). */
 export function submitReadiness(bundle: ShipmentBundle, check: FullCheck): { ready: boolean; items: ReadinessItem[] } {
   const s = bundle.shipment;
-  const reds = check.allIssues.filter((i) => i.severity === "RED");
+  const reds = check.blocking.filter((i) => i.severity === "RED");
   const ambers = ambersToCheck(check);
   const ticked = ambers.filter((i) => isAcknowledged(s, i)).length;
   const latest = (k: string) => bundle.documents.filter((d) => d.kind === k).at(-1);
@@ -286,18 +289,20 @@ export function submitReadiness(bundle: ShipmentBundle, check: FullCheck): { rea
       detail: ambers.length ? `${ticked} of ${ambers.length} checked` : "No AMBER items", action: "Fix or tick the AMBER items" },
     { key: "carrier", label: "Carrier selected", ok: carrierOk,
       detail: carrierOk ? s.selected_carrier : "Choose a carrier from the recommendations", action: "Choose a carrier" },
-    { key: "documents", label: "Commercial invoice and packing list uploaded and confirmed", ok: docsOk,
-      detail: docsOk ? "Both confirmed" : "Upload and confirm both documents", action: "Upload and confirm the invoice and packing list" },
-    { key: "docDetails", label: "Document details complete", ok: missing.length === 0,
-      detail: missing.length ? `${missing.length} detail(s) missing: ${missing.slice(0, 3).map((m) => m.label).join(", ")}${missing.length > 3 ? "…" : ""}` : "All provided",
+    { key: "documents", label: "Commercial invoice and packing list uploaded and confirmed", ok: docsOk && check.docIssues.length === 0, warning: true,
+      detail: !docsOk ? "Not all uploaded and confirmed yet. You can still submit; customs will need them."
+        : check.docIssues.length ? `${check.docIssues.length} document warning(s). You can still submit.` : "Both confirmed and they match the booking",
+      action: "Upload and confirm the invoice and packing list" },
+    { key: "docDetails", label: "Document details complete", ok: missing.length === 0, warning: true,
+      detail: missing.length ? `${missing.length} detail(s) missing: ${missing.slice(0, 3).map((m) => m.label).join(", ")}${missing.length > 3 ? "…" : ""}. You can still submit.` : "All provided",
       action: "Fill in the missing document details" },
   ];
-  return { ready: items.every((i) => i.ok), items };
+  return { ready: items.every((i) => i.ok || i.warning), items };
 }
 
 function deriveStatus(bundle: ShipmentBundle, check: FullCheck): { status: Status; pending: string | null; responsible: string | null } {
   const s = bundle.shipment;
-  const reds = check.allIssues.filter((i) => i.severity === "RED");
+  const reds = check.blocking.filter((i) => i.severity === "RED");
   if (s.status === "Delivered") return { status: "Delivered", pending: null, responsible: null };
   if (s.customs_status) {
     if (s.customs_status === "Cleared") return { status: "Cleared", pending: "Mark as delivered when it arrives", responsible: "forwarder" };
@@ -312,7 +317,7 @@ function deriveStatus(bundle: ShipmentBundle, check: FullCheck): { status: Statu
   }
   if (s.declaration_ref) return { status: "Declaration submitted", pending: "Wait for customs, then paste their email here", responsible: "forwarder" };
   if (!s.submitted_at) {
-    const first = submitReadiness(bundle, check).items.find((i) => !i.ok);
+    const first = submitReadiness(bundle, check).items.find((i) => !i.ok && !i.warning);
     return { status: "Draft", pending: first ? first.action : "Submit the booking", responsible: "seller" };
   }
   if (s.warehouse_result === "mismatch") return { status: "Mismatch", pending: "Fix the mismatch the warehouse found", responsible: "seller" };

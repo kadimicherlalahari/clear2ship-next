@@ -95,6 +95,7 @@ export function CheckView({ check, onApply, busy }: { check: CheckLike; onApply?
       {check.docIssues && (
         <div>
           <h3 className="mb-1 text-sm font-semibold">Document checks (D-01 to D-05)</h3>
+          <p className="text-xs text-slate-500">Warnings only. They don&apos;t stop the booking, but customs will need the invoice and packing list.</p>
           {check.docIssues.length > 0
             ? <IssueList issues={check.docIssues} />
             : <p className="text-sm text-green-800">Invoice and packing list are uploaded, confirmed and match the booking.</p>}

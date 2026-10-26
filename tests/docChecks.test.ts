@@ -33,3 +33,12 @@ describe("document mismatches", () => {
     expect(checkDocuments(two, pl).find((i) => i.code === "D-02")!.compare!.bookingTarget).toBeNull();
   });
 });
+
+describe("document checks are warnings only", () => {
+  it("missing documents and mismatches never come back RED", () => {
+    const missing = checkDocuments(booking, []);
+    expect(missing.map((i) => i.code)).toEqual(["D-01", "D-01"]);
+    const mismatched = checkDocuments(booking, docs({ total_cartons: f("88", "88 cartons"), gross_weight_kg: f("600", "600 kg") }));
+    for (const i of [...missing, ...mismatched]) expect({ kind: i.kind, severity: i.severity }).toEqual({ kind: "WARNING", severity: "AMBER" });
+  });
+});

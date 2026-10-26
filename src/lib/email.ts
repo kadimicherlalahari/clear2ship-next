@@ -122,7 +122,7 @@ export async function sendIssuesEmail(b: Bundle, kind: "issues" | "reminder_24h"
   const s = b.shipment;
   const { text, reds, ambers } = problemList(b.issues);
   if (!reds.length && !ambers.length) return;
-  const missingDocs = b.issues.filter((i) => i.status === "open" && i.code === "D-01" && i.severity === "RED")
+  const missingDocs = b.issues.filter((i) => i.status === "open" && i.code === "D-01" && !String(i.field_key).endsWith(":confirm"))
     .map((i) => DOC_LABEL[String(i.field_key).split(":")[1] as keyof typeof DOC_LABEL]).filter(Boolean);
   const link = `${appUrl()}/shipments/${s.id}`;
 

@@ -260,7 +260,8 @@ function IssueItem({ issue, shipment, items, canFix, act, busy }: { issue: Issue
   const ack = (shipment.acknowledged ?? {})[issue.key];
   const ticked = issue.severity === "AMBER" && ack?.message === issue.message;
   const plan = canFix ? planFor(issue, shipment, items) : null;
-  const canTick = canFix && issue.severity === "AMBER" && !issue.key.endsWith(":confirm");
+  // Document checks are warnings only: nothing to tick.
+  const canTick = canFix && issue.severity === "AMBER" && !issue.code.startsWith("D-");
   return (
     <li className={`px-3 py-3 text-sm ${ticked ? "bg-green-50/60" : ""}`}>
       <div className="flex flex-wrap items-start gap-3">
@@ -316,6 +317,7 @@ export function ChecksPanel({ check, shipment, items, canFix, act, busy, showDis
         </div>
         <div className="space-y-2">
           <h3 className="text-sm font-semibold">Document checks (D-01 to D-05)</h3>
+          <p className="text-xs text-slate-500">Warnings only. They don&apos;t stop the booking, but customs will need the invoice and packing list.</p>
           {check.docIssues.length > 0 ? list(check.docIssues) : <p className="text-sm text-green-800">Invoice and packing list are uploaded, confirmed and match the booking.</p>}
         </div>
         {extra.length > 0 && (

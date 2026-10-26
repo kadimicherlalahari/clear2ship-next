@@ -1,11 +1,11 @@
 "use client";
-import { Check, Minus } from "lucide-react";
+import { Check, Minus, TriangleAlert } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Button, Card, ErrorNote, formatTime, InfoNote, postJson, ROLE_LABEL } from "./ui";
 
 type Row = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 type Act = (fn: () => Promise<unknown>, done?: string) => Promise<void>;
-export type Readiness = { ready: boolean; items: { key: string; label: string; ok: boolean; detail: string }[] };
+export type Readiness = { ready: boolean; items: { key: string; label: string; ok: boolean; detail: string; warning?: boolean }[] };
 
 const dmy = (v: unknown) => (v ? String(v).slice(0, 10).split("-").reverse().join("-") : "");
 const WINDOWS = ["08:00–12:00", "12:00–17:00", "Any time 08:00–17:00"];
@@ -42,12 +42,21 @@ export function SubmitPanel({ shipment, readiness, canSubmit, act, busy, carrier
   return (
     <Card title="Submit booking">
       <ul className="mb-4 space-y-1.5">
-        {readiness.items.map((i) => (
-          <li key={i.key} className="flex items-start gap-2 text-sm">
-            <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold ${i.ok ? "bg-green-600 text-white" : "bg-slate-200 text-slate-500"}`}>{i.ok ? <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden /> : <Minus className="h-3.5 w-3.5" aria-hidden />}</span>
-            <span><span className={i.ok ? "text-slate-900" : "font-medium text-slate-900"}>{i.label}</span> <span className="text-slate-500">· {i.detail}</span></span>
-          </li>
-        ))}
+        {readiness.items.map((i) => {
+          const warn = !i.ok && i.warning;
+          return (
+            <li key={i.key} className="flex items-start gap-2 text-sm">
+              <span className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-xs font-bold ${i.ok ? "bg-green-600 text-white" : warn ? "bg-amber-100 text-amber-700" : "bg-slate-200 text-slate-500"}`}>
+                {i.ok ? <Check className="h-3.5 w-3.5" strokeWidth={3} aria-hidden /> : warn ? <TriangleAlert className="h-3.5 w-3.5" aria-hidden /> : <Minus className="h-3.5 w-3.5" aria-hidden />}
+              </span>
+              <span>
+                <span className={i.ok ? "text-slate-900" : "font-medium text-slate-900"}>{i.label}</span>
+                {warn && <span className="ml-1.5 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-bold text-amber-800">WARNING</span>}
+                {" "}<span className="text-slate-500">· {i.detail}</span>
+              </span>
+            </li>
+          );
+        })}
       </ul>
       {canSubmit ? (
         <>
@@ -56,7 +65,7 @@ export function SubmitPanel({ shipment, readiness, canSubmit, act, busy, carrier
             I&apos;ve checked the booking summary, carrier and document details above, and they&apos;re correct.
           </label>
           <Button disabled={!enabled || busy} onClick={() => setOpen(true)}>Submit booking</Button>
-          {!readiness.ready && <p className="mt-2 text-xs text-slate-500">Submit unlocks when every item above has a tick.</p>}
+          {!readiness.ready && <p className="mt-2 text-xs text-slate-500">Submit unlocks when every item above has a tick. Warnings don&apos;t stop you.</p>}
           <p className="mt-2 text-xs text-slate-500">Submitting asks {shipment.selected_carrier ?? "your carrier"} to confirm the collection. Once they confirm, the destination warehouse is asked for a delivery slot. Nothing is booked until they confirm.</p>
         </>
       ) : <InfoNote>Switch role to Seller to submit the booking.</InfoNote>}
