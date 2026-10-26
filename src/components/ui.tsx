@@ -1,5 +1,6 @@
 "use client";
-import type { ReactNode } from "react";
+import { ChevronDown } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 export const STATUS_STYLE: Record<string, string> = {
   Draft: "bg-slate-100 text-slate-700 ring-slate-300",
@@ -45,6 +46,48 @@ export function Card({ title, children, actions, className = "" }: { title?: Rea
         </div>
       )}
       {children}
+    </section>
+  );
+}
+
+/**
+ * A card that folds to one line: title + a short summary, with the detail behind a click. It opens by itself when a
+ * link points inside it (e.g. a "Fix it" button to #documents), so no shortcut lands on a closed section.
+ */
+export function Fold({ id, title, summary, tone = "plain", actions, open: forceOpen = false, children }: {
+  id: string; title: ReactNode; summary?: ReactNode; tone?: "plain" | "warn"; actions?: ReactNode; open?: boolean; children: ReactNode;
+}) {
+  const [open, setOpen] = useState(forceOpen);
+  const ref = useRef<HTMLElement>(null);
+  useEffect(() => { if (forceOpen) setOpen(true); }, [forceOpen]);
+  useEffect(() => {
+    const follow = () => {
+      const hash = decodeURIComponent(location.hash.slice(1));
+      const target = hash && document.getElementById(hash);
+      if (target && ref.current?.contains(target)) {
+        setOpen(true);
+        requestAnimationFrame(() => target.scrollIntoView({ block: "start" }));
+      }
+    };
+    follow();
+    window.addEventListener("hashchange", follow);
+    return () => window.removeEventListener("hashchange", follow);
+  }, []);
+  return (
+    <section ref={ref} className="rounded-2xl border border-slate-200/80 bg-white shadow-sm">
+      <span id={id} />
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 p-5 sm:px-6">
+        <button type="button" aria-expanded={open} aria-controls={`${id}-body`} onClick={() => setOpen((o) => !o)}
+          className="group flex min-w-0 flex-1 items-center gap-3 text-left">
+          <ChevronDown aria-hidden className={`h-5 w-5 shrink-0 text-slate-500 transition-transform duration-200 group-hover:text-slate-900 ${open ? "" : "-rotate-90"}`} />
+          <span className="min-w-0">
+            <span className="block text-lg font-bold tracking-tight text-slate-900">{title}</span>
+            {summary && !open && <span className={`line-clamp-2 text-sm sm:line-clamp-1 ${tone === "warn" ? "text-amber-800" : "text-slate-600"}`}>{summary}</span>}
+          </span>
+        </button>
+        {actions}
+      </div>
+      <div id={`${id}-body`} hidden={!open} className="px-5 pb-5 sm:px-6 sm:pb-6">{children}</div>
     </section>
   );
 }

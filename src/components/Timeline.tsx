@@ -38,7 +38,7 @@ function split(action: string): { title: string; details: string[]; status?: str
   return { title: action, details: [] };
 }
 
-export function Timeline({ events }: { events: Event[] }) {
+export function Timeline({ events, bare = false }: { events: Event[]; bare?: boolean }) {
   const [roles, setRoles] = useState<Set<string>>(new Set());
   const [showSystem, setShowSystem] = useState(true);
   const [limit, setLimit] = useState(20);
@@ -64,9 +64,11 @@ export function Timeline({ events }: { events: Event[] }) {
   });
 
   return (
-    <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
+    <section className={bare ? "" : "rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6"}>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-lg font-bold tracking-tight">Timeline <span className="text-sm font-normal text-slate-500">· {events.length} updates</span></h2>
+        {bare
+          ? <h3 className="text-sm font-semibold">Timeline <span className="font-normal text-slate-500">· {events.length} update{events.length === 1 ? "" : "s"}</span></h3>
+          : <h2 className="text-lg font-bold tracking-tight">Timeline <span className="text-sm font-normal text-slate-500">· {events.length} updates</span></h2>}
         <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label="Filter by who made the change">
           {[...counts.keys()].filter((r) => r !== "system").map((r) => (
             <button key={r} onClick={() => toggle(r)} aria-pressed={roles.has(r)}

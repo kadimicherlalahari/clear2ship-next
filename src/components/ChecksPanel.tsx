@@ -271,8 +271,8 @@ function IssueItem({ issue, shipment, items, canFix, act, busy }: { issue: Issue
         </div>
         <div className="min-w-0 flex-1">
           <p className="font-medium text-slate-900">{issue.message}</p>
-          <p className="text-slate-600"><span className="font-medium">How to fix:</span> {issue.fix}</p>
-          <p className="text-xs text-slate-500">Who should fix it: {ROLE_LABEL[issue.owner] ?? issue.owner}</p>
+          {issue.fix !== issue.message && <p className="text-slate-600">{issue.fix}</p>}
+          {issue.owner !== "seller" && <p className="text-xs text-slate-500">For the {(ROLE_LABEL[issue.owner] ?? issue.owner).toLowerCase()}</p>}
           {ticked && <p className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-green-800"><Check className="h-3.5 w-3.5" aria-hidden /> Checked by {ack.by} · {formatTime(ack.at)}</p>}
         </div>
         {canTick && !ticked && (
@@ -304,22 +304,32 @@ export function ChecksPanel({ check, shipment, items, canFix, act, busy, showDis
       <span id="checks" />
       <div className="space-y-4">
         <div className="space-y-2">
-          <h3 className="text-sm font-semibold">Booking checks (R-01 to R-10)</h3>
           <Headline overall={check.overall} headline={check.headline} />
-          {shipment.submitted_at && shipment.selected_carrier && (
-            <p className="text-sm text-slate-700">
-              Your chosen carrier: <b>{shipment.selected_carrier}</b>{" "}
-              ({shipment.carrier_status === "confirmed" ? "collection booked" : shipment.carrier_status === "declined" ? "declined" : "waiting for the carrier to confirm"}).
-            </p>
-          )}
           {check.issues.length > 0 && list(check.issues)}
           {check.notes.map((n) => <p key={n} className="text-sm font-medium text-slate-700">Note: {n}</p>)}
         </div>
-        <div className="space-y-2">
-          <h3 className="text-sm font-semibold">Document checks (D-01 to D-05)</h3>
-          <p className="text-xs text-slate-500">Warnings only. They don&apos;t stop the booking, but customs will need the invoice and packing list.</p>
-          {check.docIssues.length > 0 ? list(check.docIssues) : <p className="text-sm text-green-800">Invoice and packing list are uploaded, confirmed and match the booking.</p>}
-        </div>
+        {check.docIssues.length > 0 && (
+          <div className="space-y-2">
+            <h3 className="text-sm font-semibold">Documents <span className="font-normal text-slate-500">· warnings, they won&apos;t stop the booking</span></h3>
+            {/* "Not uploaded / not confirmed yet" is one line here; the Documents section has the uploads. */}
+            {(() => {
+              const pending = check.docIssues.filter((i) => i.code === "D-01");
+              const rest = check.docIssues.filter((i) => i.code !== "D-01");
+              return (
+                <>
+                  {pending.length > 0 && (
+                    <p className="flex flex-wrap items-center gap-2 text-sm">
+                      <LevelBadge level="WARNING" />
+                      <span>{pending.map((i) => i.message.replace(/\.$/, "")).join(". ")}.</span>
+                      <a href="#documents" className="font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline focus-visible:underline">Open Documents</a>
+                    </p>
+                  )}
+                  {rest.length > 0 && list(rest)}
+                </>
+              );
+            })()}
+          </div>
+        )}
         {extra.length > 0 && (
           <div className="space-y-2">
             <h3 className="text-sm font-semibold">Carrier, delivery slot and warehouse</h3>

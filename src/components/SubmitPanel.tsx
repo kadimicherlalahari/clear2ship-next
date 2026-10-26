@@ -62,11 +62,11 @@ export function SubmitPanel({ shipment, readiness, canSubmit, act, busy, carrier
         <>
           <label className="mb-3 flex items-start gap-2 text-sm">
             <input type="checkbox" className="mt-0.5 h-4 w-4 accent-sky-600" checked={summaryOk} onChange={(e) => setSummaryOk(e.target.checked)} />
-            I&apos;ve checked the booking summary, carrier and document details above, and they&apos;re correct.
+            I&apos;ve checked the booking, carrier and documents, and they&apos;re correct.
           </label>
           <Button disabled={!enabled || busy} onClick={() => setOpen(true)}>Submit booking</Button>
           {!readiness.ready && <p className="mt-2 text-xs text-slate-500">Submit unlocks when every item above has a tick. Warnings don&apos;t stop you.</p>}
-          <p className="mt-2 text-xs text-slate-500">Submitting asks {shipment.selected_carrier ?? "your carrier"} to confirm the collection. Once they confirm, the destination warehouse is asked for a delivery slot. Nothing is booked until they confirm.</p>
+          <p className="mt-2 text-xs text-slate-500">{shipment.selected_carrier ?? "Your carrier"} is asked to confirm the collection, then the warehouse for a delivery slot. Nothing is booked until they confirm.</p>
         </>
       ) : <InfoNote>Switch role to Seller to submit the booking.</InfoNote>}
 

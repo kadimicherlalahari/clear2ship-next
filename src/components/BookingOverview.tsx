@@ -1,7 +1,7 @@
 "use client";
 import { Check, X } from "lucide-react";
 import { validateDetail, type DetailValue, type DocDetails } from "@/lib/docDetails";
-import { Card } from "./ui";
+import { Fold } from "./ui";
 
 type Row = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
@@ -33,6 +33,7 @@ function OvTable({ title, rows }: { title: string; rows: OvRow[] }) {
 
 /** One place for the booking: key shipment facts, everything both documents need (with sources), and the item lines. */
 export function BookingOverview({ shipment: s, items, actions, editor }: { shipment: Row; items: Row[]; actions?: React.ReactNode; editor?: React.ReactNode }) {
+  const kg = (v: unknown) => (v ? `${num(v)} kg` : null);
   const d = (s.doc_details ?? {}) as DocDetails;
   const det = (k: string): string | null => {
     const v = d[k] as DetailValue | undefined;
@@ -70,8 +71,18 @@ export function BookingOverview({ shipment: s, items, actions, editor }: { shipm
     { label: "Net weight", value: netKg ? `${num(netKg)} kg` : null, source: "Calculated" },
   ];
   let carton = 1;
+  const ready = [...invoice, ...packing].filter((r) => r.value).length;
+  const total = invoice.length + packing.length;
+  const summary = [
+    `${s.origin_city ?? "?"} → ${s.destination_city ?? "?"}`,
+    s.pallets && `${num(s.pallets, 0)} pallet${Number(s.pallets) === 1 ? "" : "s"}`,
+    s.cartons && `${num(s.cartons, 0)} cartons`,
+    kg(s.gross_weight_kg),
+    s.declared_value && money(s.declared_value),
+    `${ready} of ${total} document details ready`,
+  ].filter(Boolean).join(" · ");
   return (
-    <Card title="Booking overview" actions={actions}>
+    <Fold id="overview" title="Booking overview" summary={summary} actions={actions} open={!!editor}>
       {editor ?? (<>
       <dl className="mb-5 grid gap-x-6 gap-y-2 rounded-lg bg-slate-50 p-3 text-sm sm:grid-cols-2 lg:grid-cols-4">
         {[
@@ -88,7 +99,7 @@ export function BookingOverview({ shipment: s, items, actions, editor }: { shipm
         ))}
       </dl>
       {s.raw_input && <p className="mb-3 text-xs text-amber-800">Some values couldn&apos;t be read and are kept exactly as entered: {Object.entries(s.raw_input).map(([k, v]) => `${k.replaceAll("_", " ")} “${String(v)}”`).join(", ")}.</p>}
-      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-500">Everything the commercial invoice and packing list need</p>
+      <h3 className="mb-2 text-sm font-semibold">What the invoice and packing list need</h3>
       <div className="grid gap-6 lg:grid-cols-2">
         <OvTable title="Commercial invoice" rows={invoice} />
         <OvTable title="Packing list" rows={packing} />
@@ -127,10 +138,10 @@ export function BookingOverview({ shipment: s, items, actions, editor }: { shipm
             })}
           </tbody>
         </table>
-        <p className="mt-1 text-xs text-slate-500">Line totals, carton numbers and net weights are calculated from the booking.</p>
+        <p className="mt-1 text-xs text-slate-500">Totals, carton numbers and net weights are calculated.</p>
       </div>
       </>)}
-    </Card>
+    </Fold>
   );
 }
 

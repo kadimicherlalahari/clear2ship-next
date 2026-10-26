@@ -4,7 +4,7 @@ import { useState } from "react";
 import { DETAIL_FIELDS, ITEM_DETAIL_FIELDS, missingDetails, validateDetail, type DetailValue, type DocDetails } from "@/lib/docDetails";
 import { DOC_LABEL, REQUIRED_DOCS } from "@/lib/rules/docs";
 import type { DocKind, ExtractedDoc } from "@/lib/rules/types";
-import { api, Button, Card, ErrorNote, formatTime, postJson } from "./ui";
+import { api, Button, ErrorNote, Fold, formatTime, postJson } from "./ui";
 
 export type Doc = {
   id: number; kind: DocKind; filename: string; mime_type: string; size_bytes: number;
@@ -172,16 +172,22 @@ function DetailsForm({ shipment, items, canEdit, busy, act }: { shipment: Row; i
 export function DocumentsPanel({ shipment, items, documents, canEdit, busy, act }: { shipment: Row; items: Row[]; documents: Doc[]; canEdit: boolean; busy: boolean; act: Act }) {
   const latest = (k: DocKind) => documents.filter((d) => d.kind === k).at(-1);
   const editable = canEdit && !shipment.submitted_at;
+  const state = (k: DocKind) => { const d = latest(k); return d?.confirmed_at ? "confirmed" : d ? "to confirm" : "missing"; };
+  const gaps = missingDetails(shipment.doc_details, items.map((i) => i.sku).filter(Boolean)).length;
+  const allSet = REQUIRED_DOCS.every((k) => state(k) === "confirmed") && gaps === 0;
+  const summary = [
+    ...REQUIRED_DOCS.map((k) => `${cap(DOC_LABEL[k])}: ${state(k)}`),
+    gaps ? `${gaps} detail${gaps === 1 ? "" : "s"} missing` : "all details in",
+  ].join(" · ");
   return (
-    <Card title="Documents">
-      <span id="documents" />
-      <p className="mb-3 text-sm text-slate-600">Upload your commercial invoice and packing list (PDF, image or text). Both are needed before you can submit. Everything the documents need is listed in the Booking overview above.</p>
+    <Fold id="documents" title="Documents" summary={summary} tone={allSet ? "plain" : "warn"}>
+      <p className="mb-3 text-sm text-slate-600">PDF, image or text. Customs will need both.</p>
       <div className="space-y-4">
         <div className="grid gap-4 lg:grid-cols-2">
           {REQUIRED_DOCS.map((k) => <DocBox key={k} shipmentId={shipment.id} kind={k} doc={latest(k)} canEdit={editable} busy={busy} act={act} />)}
         </div>
         <DetailsForm shipment={shipment} items={items} canEdit={editable} busy={busy} act={act} />
       </div>
-    </Card>
+    </Fold>
   );
 }

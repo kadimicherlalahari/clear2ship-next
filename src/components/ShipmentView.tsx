@@ -16,7 +16,7 @@ import { DocumentsPanel, type Doc } from "./DocumentsPanel";
 import { useRole } from "./RoleSwitcher";
 import { ConfirmationsPanel, SubmitPanel, type Readiness } from "./SubmitPanel";
 import { Timeline } from "./Timeline";
-import { api, Button, Card, ErrorNote, formatTime, InfoNote, postJson, ROLE_LABEL, StatusBadge, timeAgo } from "./ui";
+import { api, Button, Card, ErrorNote, Fold, formatTime, InfoNote, postJson, ROLE_LABEL, StatusBadge, timeAgo } from "./ui";
 
 type Row = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 type Bundle = {
@@ -163,12 +163,13 @@ export function ShipmentView({ id }: { id: string }) {
       {/* 7. After submit: carrier confirmation, then the warehouse delivery slot */}
       <ConfirmationsPanel shipment={s} role={role} act={act} busy={busy} canChooseCarrier={isSeller} />
 
-      {s.submitted_at && !s.declaration_ref && (
+      {/* Role-only cards show to the role that acts, or once there's a result to show. */}
+      {s.submitted_at && !s.declaration_ref && (["warehouse", "admin"].includes(role) || s.warehouse_result) && (
         <Card title="Warehouse goods check">
           {s.warehouse_result && (
             <p className="mb-2 text-sm">Last decision: <b>{s.warehouse_result === "accepted" ? "Accepted" : "Mismatch"}</b>{s.warehouse_note ? ` – “${s.warehouse_note}”` : ""}</p>
           )}
-          <NeedsRole role={role} roles={["warehouse", "admin"]}>
+          {["warehouse", "admin"].includes(role) && (<>
             <p className="mb-2 text-sm text-slate-600">Compare the goods with the booking ({num(s.pallets)} pallets, {num(s.cartons)} cartons, {num(s.gross_weight_kg)} kg).</p>
             <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} aria-label="Warehouse note"
               placeholder="Note (required for a mismatch), e.g. “Only 88 cartons received”"
@@ -177,11 +178,11 @@ export function ShipmentView({ id }: { id: string }) {
               <Button disabled={busy} onClick={() => act(() => postJson(`/api/shipments/${id}/warehouse`, { result: "accepted", note }), "Goods accepted.").then(() => setNote(""))}>Accept goods</Button>
               <Button variant="danger" disabled={busy} onClick={() => act(() => postJson(`/api/shipments/${id}/warehouse`, { result: "mismatch", note }), "Mismatch flagged. The seller has been told.").then(() => setNote(""))}>Flag mismatch</Button>
             </div>
-          </NeedsRole>
+          </>)}
         </Card>
       )}
 
-      {s.submitted_at && (
+      {s.submitted_at && (locked || ["forwarder", "admin"].includes(role)) && (
         <Card title="Customs declaration">
           {locked ? (
             <p className="text-sm">Declaration submitted by the forwarder: <b>{s.declaration_ref}</b> on {date(s.declaration_date)}.</p>
@@ -206,7 +207,7 @@ export function ShipmentView({ id }: { id: string }) {
 
       {s.declaration_ref && <CustomsPanel shipment={s} messages={b.customs} replies={b.replies} role={role} busy={busy} act={act} />}
 
-      {s.status === "Cleared" && (
+      {s.status === "Cleared" && ["forwarder", "admin"].includes(role) && (
         <Card title="Delivery">
           <NeedsRole role={role} roles={["forwarder", "admin"]}>
             <Button disabled={busy} onClick={() => act(() => postJson(`/api/shipments/${id}/delivered`, {}), "Marked as delivered.")}>Mark as delivered</Button>
@@ -214,35 +215,43 @@ export function ShipmentView({ id }: { id: string }) {
         </Card>
       )}
 
-      {/* 9. Timeline */}
-      <Timeline events={b.events as never} />
-
-      {isSeller && (
-        <Card title="Alerts sent to the seller" actions={<Link href="/alerts" className="text-sm font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline focus-visible:underline">All alerts</Link>}>
-          {!b.alerts.length && <p className="text-sm text-slate-500">No alerts yet.</p>}
-          <ul className="space-y-2">
-            {b.alerts.map((a) => (
-              <li key={a.id} className="text-sm">
-                <p><b>{a.title}</b> <span className="text-xs text-slate-500">· {formatTime(a.created_at)}</span></p>
-                <p className="text-xs text-slate-500">
-                  App: shown · Email: {a.channels?.email?.status === "sent" ? "sent" : a.channels?.email?.status === "outbox" ? "in email log" : "not sent"} · Telegram: {a.channels?.telegram?.status === "sent" ? "sent" : "not connected"}
-                  {(a.actions ?? []).some((x: Row) => x.action !== "open") && (a.resolved_at ? " · done" : " · needs action")}
-                </p>
-              </li>
-            ))}
-          </ul>
-          {role === "admin" && b.emails.length > 0 && (
-            <details className="mt-3 text-sm">
-              <summary className="cursor-pointer text-slate-600">All emails for this shipment ({b.emails.length})</summary>
-              <ul className="mt-2 space-y-2">
-                {b.emails.map((m) => (
-                  <li key={m.id}><b>{m.subject}</b> <span className="text-xs text-slate-500">→ {m.to_address} · {formatTime(m.sent_at)} · {m.provider_id ? "sent" : m.error}</span></li>
+      {/* History: what happened and which alerts went out */}
+      <Fold id="history" title="History"
+        summary={`${b.events.length} update${b.events.length === 1 ? "" : "s"}${isSeller ? ` · ${b.alerts.length} alert${b.alerts.length === 1 ? "" : "s"} sent` : ""}`}>
+        <div className="space-y-6">
+          <Timeline events={b.events as never} bare />
+          {isSeller && (
+            <div>
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <h3 className="text-sm font-semibold">Alerts sent to you</h3>
+                <Link href="/alerts" className="text-sm font-semibold text-slate-900 decoration-sky-500 decoration-2 underline-offset-4 hover:underline focus-visible:underline">All alerts</Link>
+              </div>
+              {!b.alerts.length && <p className="text-sm text-slate-500">No alerts yet.</p>}
+              <ul className="space-y-2">
+                {b.alerts.map((a) => (
+                  <li key={a.id} className="text-sm">
+                    <p><b>{a.title}</b> <span className="text-xs text-slate-500">· {formatTime(a.created_at)}</span></p>
+                    <p className="text-xs text-slate-500">
+                      Email: {a.channels?.email?.status === "sent" ? "sent" : a.channels?.email?.status === "outbox" ? "in email log" : "not sent"} · Telegram: {a.channels?.telegram?.status === "sent" ? "sent" : "not connected"}
+                      {(a.actions ?? []).some((x: Row) => x.action !== "open") && (a.resolved_at ? " · done" : " · needs action")}
+                    </p>
+                  </li>
                 ))}
               </ul>
-            </details>
+              {role === "admin" && b.emails.length > 0 && (
+                <details className="mt-3 text-sm">
+                  <summary className="cursor-pointer text-slate-600">All emails for this shipment ({b.emails.length})</summary>
+                  <ul className="mt-2 space-y-2">
+                    {b.emails.map((m) => (
+                      <li key={m.id}><b>{m.subject}</b> <span className="text-xs text-slate-500">→ {m.to_address} · {formatTime(m.sent_at)} · {m.provider_id ? "sent" : m.error}</span></li>
+                    ))}
+                  </ul>
+                </details>
+              )}
+            </div>
           )}
-        </Card>
-      )}
+        </div>
+      </Fold>
     </div>
   );
 }

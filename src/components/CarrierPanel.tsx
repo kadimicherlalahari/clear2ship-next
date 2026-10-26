@@ -1,8 +1,9 @@
 "use client";
 import { X } from "lucide-react";
+import { useState } from "react";
 import { PRIORITIES } from "@/lib/rules/constants";
 import type { CarrierOption, CarrierResult } from "@/lib/rules/types";
-import { Card, InfoNote, postJson } from "./ui";
+import { Button, Card, InfoNote, postJson } from "./ui";
 
 type Row = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 type Act = (fn: () => Promise<unknown>, done?: string) => Promise<void>;
@@ -42,6 +43,8 @@ export function CarrierPanel({ carrier, shipment, canChoose, act, busy }: {
 }) {
   const locked = !!shipment.submitted_at && shipment.carrier_status !== "declined";
   const selectable = canChoose && !locked && !busy;
+  // Once a carrier is chosen, show just that; the ranked list comes back with "Change".
+  const [showAll, setShowAll] = useState(!shipment.selected_carrier || shipment.carrier_status === "declined");
 
   if (!carrier) {
     return (
@@ -59,7 +62,7 @@ export function CarrierPanel({ carrier, shipment, canChoose, act, busy }: {
   };
   const chosen = ranked.find((c) => c.name === shipment.selected_carrier);
   const choose = (name: string) => selectable && name !== shipment.selected_carrier &&
-    act(() => postJson(`/api/shipments/${shipment.id}/actions`, { action: "select-carrier", carrier: name }), `${name} selected.`);
+    act(() => postJson(`/api/shipments/${shipment.id}/actions`, { action: "select-carrier", carrier: name }), `${name} selected.`).then(() => setShowAll(false));
   const rank = (p: string) => canChoose && !locked && p !== carrier.priorityUsed &&
     act(() => postJson(`/api/shipments/${shipment.id}/actions`, { action: "priority", priority: p }), `Recommendations regenerated for ${p}.`);
 
@@ -67,16 +70,26 @@ export function CarrierPanel({ carrier, shipment, canChoose, act, busy }: {
     <Card title="Carrier">
       <span id="carrier" />
       {/* What's chosen, at a glance */}
-      <div className={`mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm ${chosen ? "bg-sky-50 text-sky-900" : "bg-amber-50 text-amber-900"}`}>
+      <div className={`${showAll || !chosen ? "mb-4" : ""} flex flex-wrap items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm ${chosen ? "bg-sky-50 text-sky-900" : "bg-amber-50 text-amber-900"}`}>
         {chosen ? (
           <span><b>{chosen.name}</b> selected · {money(chosen.price)} · {chosen.transitDays} days · arrives around {arrival(shipment, chosen.transitDays) ?? "?"}</span>
         ) : <span><b>No carrier selected yet.</b> Pick one below. It&apos;s needed before you can submit.</span>}
         {locked && <span className="text-xs">Locked after submit (changes only if the carrier declines)</span>}
+        {chosen && !showAll && (
+          <Button variant="secondary" onClick={() => setShowAll(true)} aria-expanded={false} aria-controls="carrier-options">
+            {locked || !canChoose ? "See all options" : "Change"}
+          </Button>
+        )}
+        {chosen && showAll && shipment.selected_carrier && (
+          <Button variant="ghost" onClick={() => setShowAll(false)} aria-expanded aria-controls="carrier-options">Hide options</Button>
+        )}
       </div>
+
+      {(showAll || !chosen) && (<div id="carrier-options">
 
       {/* Re-rank in one click */}
       <div className="mb-3">
-        <p className="mb-1.5 text-xs font-medium text-slate-600">Rank by what matters most. Change it any time your situation changes:</p>
+        <p className="mb-1.5 text-xs font-medium text-slate-600">Rank by what matters most</p>
         <div role="radiogroup" aria-label="Rank carriers by" className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
           {PRIORITIES.map((p) => {
             const on = p === carrier.priorityUsed;
@@ -142,6 +155,7 @@ export function CarrierPanel({ carrier, shipment, canChoose, act, busy }: {
         </details>
       )}
       {!canChoose && <p className="mt-3 text-xs text-slate-500">Switch to the Seller role to choose a carrier.</p>}
+      </div>)}
     </Card>
   );
 }

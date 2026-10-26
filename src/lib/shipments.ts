@@ -290,11 +290,10 @@ export function submitReadiness(bundle: ShipmentBundle, check: FullCheck): { rea
     { key: "carrier", label: "Carrier selected", ok: carrierOk,
       detail: carrierOk ? s.selected_carrier : "Choose a carrier from the recommendations", action: "Choose a carrier" },
     { key: "documents", label: "Commercial invoice and packing list uploaded and confirmed", ok: docsOk && check.docIssues.length === 0, warning: true,
-      detail: !docsOk ? "Not all uploaded and confirmed yet. You can still submit; customs will need them."
-        : check.docIssues.length ? `${check.docIssues.length} document warning(s). You can still submit.` : "Both confirmed and they match the booking",
+      detail: !docsOk ? "Not yet. You can still submit." : check.docIssues.length ? `${check.docIssues.length} warning(s). You can still submit.` : "Both confirmed and matching",
       action: "Upload and confirm the invoice and packing list" },
     { key: "docDetails", label: "Document details complete", ok: missing.length === 0, warning: true,
-      detail: missing.length ? `${missing.length} detail(s) missing: ${missing.slice(0, 3).map((m) => m.label).join(", ")}${missing.length > 3 ? "…" : ""}. You can still submit.` : "All provided",
+      detail: missing.length ? `${missing.length} missing. You can still submit.` : "All provided",
       action: "Fill in the missing document details" },
   ];
   return { ready: items.every((i) => i.ok || i.warning), items };
