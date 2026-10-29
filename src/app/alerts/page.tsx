@@ -15,6 +15,7 @@ export default async function AlertsPage() {
       sellers={JSON.parse(JSON.stringify(sellers))}
       telegramConnected={!!process.env.TELEGRAM_BOT_TOKEN}
       emailConnected={!!process.env.RESEND_API_KEY}
+      emailPaused={process.env.SELLER_EMAILS_PAUSED === "true"}
     />
   );
 }

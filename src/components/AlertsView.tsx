@@ -217,7 +217,7 @@ function dayOf(iso: string) {
   return d.toLocaleDateString("en-GB", { weekday: "short", day: "numeric", month: "short", timeZone: "Europe/London" });
 }
 
-function ContactSettings({ sellers, telegramConnected, emailConnected }: { sellers: Row[]; telegramConnected: boolean; emailConnected: boolean }) {
+function ContactSettings({ sellers, telegramConnected, emailConnected, emailPaused }: { sellers: Row[]; telegramConnected: boolean; emailConnected: boolean; emailPaused: boolean }) {
   const router = useRouter();
   const [seller, setSeller] = useState(sellers[0]?.seller_name ?? "");
   const current = sellers.find((s) => s.seller_name === seller);
@@ -248,7 +248,7 @@ function ContactSettings({ sellers, telegramConnected, emailConnected }: { selle
         }}>Save</Button>
         {msg && <p className={`text-xs font-medium ${msg.ok ? "text-green-700" : "text-red-700"}`}>{msg.text}</p>}
         <div className="space-y-1 border-t border-slate-100 pt-3 text-xs text-slate-600">
-          <p>Email: {emailConnected ? <span className="text-green-700">connected</span> : <span className="text-amber-700">not connected yet (emails go to the email log)</span>}</p>
+          <p>Email: {emailPaused ? <span className="text-amber-700">paused (alerts stay in the app and on Telegram)</span> : emailConnected ? <span className="text-green-700">connected</span> : <span className="text-amber-700">not connected yet (emails go to the email log)</span>}</p>
           <p>Telegram bot: {telegramConnected ? <span className="text-green-700">connected</span> : <span className="text-amber-700">not connected yet (needs TELEGRAM_BOT_TOKEN)</span>}</p>
         </div>
       </div>
@@ -256,7 +256,7 @@ function ContactSettings({ sellers, telegramConnected, emailConnected }: { selle
   );
 }
 
-export function AlertsView({ alerts, sellers, telegramConnected, emailConnected }: { alerts: Row[]; sellers: Row[]; telegramConnected: boolean; emailConnected: boolean }) {
+export function AlertsView({ alerts, sellers, telegramConnected, emailConnected, emailPaused = false }: { alerts: Row[]; sellers: Row[]; telegramConnected: boolean; emailConnected: boolean; emailPaused?: boolean }) {
   const router = useRouter();
   const [filter, setFilter] = useState<"all" | "unread" | "action">("all");
   const [seller, setSeller] = useState("");
@@ -323,7 +323,7 @@ export function AlertsView({ alerts, sellers, telegramConnected, emailConnected 
           })()
             : <p className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-500">No alerts here.</p>}
         </div>
-        <ContactSettings sellers={sellers} telegramConnected={telegramConnected} emailConnected={emailConnected} />
+        <ContactSettings sellers={sellers} telegramConnected={telegramConnected} emailConnected={emailConnected} emailPaused={emailPaused} />
       </div>
     </div>
   );

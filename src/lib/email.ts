@@ -18,12 +18,17 @@ export type EmailKind =
   | "appointment_request" | "appointment_confirmed" | "appointment_declined" | "appointment_proposed"
   | "customs_reply" | "resubmitted" | "goods_result" | "goods_rejected" | "customs_cleared" | "delivered";
 
-export async function sendEmail(shipmentId: string, kind: EmailKind, to: string | null, subject: string, body: string): Promise<ChannelResult> {
+/** SELLER_EMAILS_PAUSED=true stops emails to sellers (app alerts and Telegram carry on); they're kept in the email log. */
+export const sellerEmailsPaused = () => process.env.SELLER_EMAILS_PAUSED === "true";
+
+export async function sendEmail(shipmentId: string, kind: EmailKind, to: string | null, subject: string, body: string, opts: { paused?: boolean } = {}): Promise<ChannelResult> {
   let providerId: string | null = null;
   let error: string | null = null;
   const toAddress = to || "(no email address)";
   if (!to) {
     error = "Not sent: no email address on this shipment.";
+  } else if (opts.paused) {
+    error = "Not sent: seller emails are paused (SELLER_EMAILS_PAUSED). Saved to the email log.";
   } else if (!process.env.RESEND_API_KEY) {
     error = "Not sent: email isn't connected yet (RESEND_API_KEY is empty). Saved to the Outbox.";
   } else {
@@ -46,6 +51,7 @@ export async function sendEmail(shipmentId: string, kind: EmailKind, to: string 
   );
   if (providerId) return { status: "sent", detail: `Emailed to ${toAddress}.` };
   if (!to) return { status: "not_connected", detail: "No email address on this shipment." };
+  if (opts.paused) return { status: "outbox", detail: "Seller emails are paused; saved to the email log." };
   if (!process.env.RESEND_API_KEY) return { status: "outbox", detail: "Email isn't connected yet; saved to the email log." };
   return { status: "failed", detail: error ?? "Email failed." };
 }
@@ -91,7 +97,7 @@ ${links.length ? `\nWhat you can do now:\n${links.map((l) => `  • ${l.text}: $
 Open the shipment: ${shipmentLink}
 
 – Clear2Ship`;
-  const email = await sendEmail(s.id, a.kind, s.seller_email, a.title, body);
+  const email = await sendEmail(s.id, a.kind, s.seller_email, a.title, body, { paused: sellerEmailsPaused() });
   const telegram = await sendTelegram(
     s.seller_telegram_chat_id ?? null,
     `${a.title}\n\n${a.lines.join("\n")}`,
